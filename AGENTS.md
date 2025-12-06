@@ -85,6 +85,7 @@ idiomatic APIs.
 - Search for code duplication with using [JSCPD](https://github.com/kucherenko/jscpd) and the command
   `npx jscpd --pattern "**/*.go" --ignore "**/*_test.go" --threshold 0 --exitCode 1`
 - `go fmt ./...` and `go vet ./...` to keep code idiomatic before committing.
+- Do not run tests with act. Always use natively installed tools.
 
 ## Commit & Pull Request Guidelines
 
@@ -105,3 +106,7 @@ idiomatic APIs.
 - Keep `./README.md` up to date.
 - Differentiate between end-user and developer documentation.
 - Developers must get clear and precise instructions on how to run linters and tests and compile the software.
+
+## Interacting with GitHub
+
+To interact with GitHub the `gh` commandline utility must be used. It's configured and authenticated properly.
