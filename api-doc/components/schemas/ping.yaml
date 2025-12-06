@@ -1,0 +1,119 @@
+PaginationMeta:
+  type: object
+  required:
+    - page
+  properties:
+    page:
+      type: object
+      required:
+        - currentPage
+        - from
+        - lastPage
+        - perPage
+        - to
+        - total
+      properties:
+        currentPage:
+          type: integer
+          minimum: 1
+        from:
+          type: integer
+          minimum: 0
+        lastPage:
+          type: integer
+          minimum: 1
+        perPage:
+          type: integer
+          minimum: 1
+        to:
+          type: integer
+          minimum: 0
+        total:
+          type: integer
+          minimum: 0
+PaginationLinks:
+  type: object
+  required:
+    - self
+    - first
+    - last
+  properties:
+    self:
+      type: string
+      format: uri
+    first:
+      type: string
+      format: uri
+    last:
+      type: string
+      format: uri
+    next:
+      type: string
+      format: uri
+      description: Link to the next page (if available).
+    prev:
+      type: string
+      format: uri
+      description: Link to the previous page (if available).
+PingResource:
+  type: object
+  required:
+    - type
+    - id
+    - attributes
+  properties:
+    type:
+      type: string
+      enum:
+        - ping
+    id:
+      type: string
+    attributes:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+          example: pong
+PingResponse:
+  type: object
+  required:
+    - meta
+    - links
+    - data
+  properties:
+    meta:
+      $ref: '#/PaginationMeta'
+    links:
+      $ref: '#/PaginationLinks'
+    data:
+      $ref: '#/PingResource'
+ErrorObject:
+  type: object
+  required:
+    - status
+    - title
+    - detail
+  properties:
+    status:
+      type: string
+      description: HTTP status code applicable to this problem.
+      example: "400"
+    title:
+      type: string
+      description: Short summary of the problem.
+      example: Bad Request
+    detail:
+      type: string
+      description: Human-readable explanation specific to this occurrence of the problem.
+      example: Invalid request payload.
+ErrorResponse:
+  type: object
+  required:
+    - errors
+  properties:
+    errors:
+      type: array
+      items:
+        $ref: '#/ErrorObject'

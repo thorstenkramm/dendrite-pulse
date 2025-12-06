@@ -1,0 +1,46 @@
+get:
+  operationId: getPing
+  summary: Health check
+  description: Returns a JSON:API document confirming the API is responsive.
+  responses:
+    '200':
+      description: Pong response
+      content:
+        application/vnd.api+json:
+          schema:
+            $ref: ../components/schemas/ping.yaml#/PingResponse
+          examples:
+            success:
+              summary: Pong
+              value:
+                meta:
+                  page:
+                    currentPage: 1
+                    from: 1
+                    lastPage: 1
+                    perPage: 1
+                    to: 1
+                    total: 1
+                links:
+                  self: https://api.dendrite-pulse.test/api/v1/ping
+                  first: https://api.dendrite-pulse.test/api/v1/ping
+                  last: https://api.dendrite-pulse.test/api/v1/ping
+                data:
+                  type: ping
+                  id: ping
+                  attributes:
+                    message: pong
+    '400':
+      description: Bad request
+      content:
+        application/vnd.api+json:
+          schema:
+            $ref: ../components/schemas/ping.yaml#/ErrorResponse
+          examples:
+            invalidRequest:
+              summary: Invalid request
+              value:
+                errors:
+                  - status: "400"
+                    title: Bad Request
+                    detail: Invalid request payload.

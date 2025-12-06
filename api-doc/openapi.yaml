@@ -1,0 +1,30 @@
+openapi: 3.1.0
+info:
+  title: Dendrite Pulse API
+  version: 0.1.0
+  description: >
+    API reference for dendrite-pulse. Follows JSON:API conventions; the ping endpoint confirms API availability.
+  license:
+    name: MIT
+    url: https://opensource.org/license/mit
+servers:
+  - url: https://api.dendrite-pulse.test
+    description: Reference server
+paths:
+  /api/v1/ping:
+    $ref: ./paths/ping.yaml
+security: []
+components:
+  schemas:
+    PingResponse:
+      $ref: ./components/schemas/ping.yaml#/PingResponse
+    PingResource:
+      $ref: ./components/schemas/ping.yaml#/PingResource
+    PaginationMeta:
+      $ref: ./components/schemas/ping.yaml#/PaginationMeta
+    PaginationLinks:
+      $ref: ./components/schemas/ping.yaml#/PaginationLinks
+    ErrorObject:
+      $ref: ./components/schemas/ping.yaml#/ErrorObject
+    ErrorResponse:
+      $ref: ./components/schemas/ping.yaml#/ErrorResponse

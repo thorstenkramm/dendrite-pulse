@@ -1,0 +1,57 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - "**"
+
+jobs:
+  lint-test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+        working-directory: ${{ github.workspace }}
+    env:
+      GO111MODULE: on
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          check-latest: true
+
+      - name: Download modules
+        run: go mod download
+
+      - name: Install golangci-lint 2.5.0
+        env:
+          GOBIN: ${{ github.workspace }}/bin
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh \
+            | sh -s -- -b "${GOBIN}" v2.5.0
+          echo "${GOBIN}" >> "$GITHUB_PATH"
+
+      - name: Run golangci-lint
+        run: go mod tidy && golangci-lint run
+
+      - name: Run Go tests
+        run: go test -race -v ./...
+
+      - name: Install Node.js 20
+        run: |
+          curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
+          apt-get update
+          apt-get install -y nodejs
+
+      - name: Markdown lint
+        run: npx markdownlint-cli "**/*.md"
+
+      - name: Code duplication check
+        run: npx jscpd --pattern "**/*.go" --ignore "**/*_test.go" --threshold 0 --exitCode 1
+
+      - name: API doc lint
+        run: npx @redocly/cli lint --lint-config off ./api-doc/openapi.yaml
