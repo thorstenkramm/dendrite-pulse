@@ -39,3 +39,4 @@ go.work.sum
 
 # Exported API Docs
 index.html
+/dendrite.log

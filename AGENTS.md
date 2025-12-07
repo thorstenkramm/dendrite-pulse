@@ -85,7 +85,9 @@ idiomatic APIs.
 - Search for code duplication with using [JSCPD](https://github.com/kucherenko/jscpd) and the command
   `npx jscpd --pattern "**/*.go" --ignore "**/*_test.go" --threshold 0 --exitCode 1`
 - `go fmt ./...` and `go vet ./...` to keep code idiomatic before committing.
-- Do not run tests with act. Always use natively installed tools.
+- Do not run tests with `act`. Always use natively installed tools.
+- Always run all tests after a task is completed.
+- Make sure the test coverage doesn't fall below the required threshold of 75% after a task is completed.
 
 ## Commit & Pull Request Guidelines
 

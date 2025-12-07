@@ -1,22 +1,26 @@
 package server
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
+	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
 
+	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/thorstenkramm/dendrite-pulse/internal/api"
+	"github.com/thorstenkramm/dendrite-pulse/internal/logging"
 	"github.com/thorstenkramm/dendrite-pulse/internal/ping"
 )
 
 func TestPingHandler(t *testing.T) {
-	e := buildRouter()
+	e := buildRouter(Config{})
 
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/ping", nil)
 	rec := httptest.NewRecorder()
@@ -37,7 +41,7 @@ func TestPingHandler(t *testing.T) {
 }
 
 func TestNotFoundHandler(t *testing.T) {
-	e := buildRouter()
+	e := buildRouter(Config{})
 
 	req := httptest.NewRequest(http.MethodGet, "/does-not-exist", nil)
 	rec := httptest.NewRecorder()
@@ -57,7 +61,7 @@ func TestNotFoundHandler(t *testing.T) {
 }
 
 func TestMethodNotAllowed(t *testing.T) {
-	e := buildRouter()
+	e := buildRouter(Config{})
 
 	req := httptest.NewRequest(http.MethodPost, "/api/v1/ping", nil)
 	rec := httptest.NewRecorder()
@@ -80,7 +84,7 @@ func TestRun_GracefulShutdown(t *testing.T) {
 
 	errCh := make(chan error, 1)
 	go func() {
-		errCh <- Run(ctx, ":0")
+		errCh <- Run(ctx, ":0", Config{})
 	}()
 
 	// Give the server time to start
@@ -95,4 +99,77 @@ func TestRun_GracefulShutdown(t *testing.T) {
 	case <-time.After(3 * time.Second):
 		t.Fatal("server did not shut down in time")
 	}
+}
+
+func TestSlogRequestLogger(t *testing.T) {
+	var buf bytes.Buffer
+	logger := slog.New(slog.NewTextHandler(&buf, &slog.HandlerOptions{Level: slog.LevelDebug}))
+
+	cfg := Config{
+		Logger:      logger,
+		LogRequests: true,
+	}
+	e := buildRouter(cfg)
+
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/ping", nil)
+	req.Header.Set("User-Agent", "test-agent")
+	rec := httptest.NewRecorder()
+
+	e.ServeHTTP(rec, req)
+
+	require.Equal(t, http.StatusOK, rec.Code)
+
+	logOutput := buf.String()
+	assert.Contains(t, logOutput, "new request")
+	assert.Contains(t, logOutput, "path=/api/v1/ping")
+	assert.Contains(t, logOutput, "method=GET")
+	assert.Contains(t, logOutput, "user_agent=test-agent")
+}
+
+func TestSlogRequestLogger_WithRequestID(t *testing.T) {
+	var buf bytes.Buffer
+	logger := slog.New(slog.NewTextHandler(&buf, &slog.HandlerOptions{Level: slog.LevelDebug}))
+
+	cfg := Config{
+		Logger:      logger,
+		LogRequests: true,
+	}
+	e := buildRouter(cfg)
+
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/ping", nil)
+	rec := httptest.NewRecorder()
+
+	e.ServeHTTP(rec, req)
+
+	require.Equal(t, http.StatusOK, rec.Code)
+
+	// RequestID middleware should have generated an ID
+	logOutput := buf.String()
+	assert.Contains(t, logOutput, "request_id=")
+}
+
+func TestSlogRequestLogger_ContextLogger(t *testing.T) {
+	var buf bytes.Buffer
+	logger := slog.New(slog.NewTextHandler(&buf, &slog.HandlerOptions{Level: slog.LevelDebug}))
+
+	cfg := Config{
+		Logger:      logger,
+		LogRequests: true,
+	}
+	e := buildRouter(cfg)
+
+	// Add a test handler that checks for logger in context
+	var ctxLogger *slog.Logger
+	e.GET("/test-ctx", func(c echo.Context) error {
+		ctxLogger = logging.FromContext(c.Request().Context())
+		return c.String(http.StatusOK, "ok")
+	})
+
+	req := httptest.NewRequest(http.MethodGet, "/test-ctx", nil)
+	rec := httptest.NewRecorder()
+
+	e.ServeHTTP(rec, req)
+
+	require.Equal(t, http.StatusOK, rec.Code)
+	assert.NotNil(t, ctxLogger, "logger should be available in request context")
 }
