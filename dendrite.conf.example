@@ -1,0 +1,28 @@
+# Dendrite Configuration File
+# Copy this file to /etc/dendrite/dendrite.conf and adjust settings for your environment.
+
+[main]
+# Server listen address
+# Can be overridden with --listen flag or DENDRITE_MAIN_LISTEN environment variable
+# default: 127.0.0.1
+#listen = "127.0.0.1"
+
+# Server port
+# Can be overridden with --port flag or DENDRITE_MAIN_PORT environment variable
+# default: 3000
+#port = 3000
+
+[log]
+# Log file; if omitted, logging is turned off. Use "-" for stdout.
+# Can be overridden with --log-file flag or DENDRITE_LOG_FILE environment variable.
+#file = ""
+
+# Log level, one of debug, info, warn, error.
+# Can be overridden with --log-level flag or DENDRITE_LOG_LEVEL environment variable.
+# Default: info
+#level = "info"
+
+# Log format, one of text or json.
+# Can be overridden with --log-format flag or DENDRITE_LOG_FORMAT environment variable.
+# Default: text
+#format = "text"
