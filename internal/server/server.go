@@ -14,6 +14,7 @@ import (
 	"github.com/labstack/echo/v4/middleware"
 
 	"github.com/thorstenkramm/dendrite-pulse/internal/api"
+	"github.com/thorstenkramm/dendrite-pulse/internal/files"
 	"github.com/thorstenkramm/dendrite-pulse/internal/logging"
 	"github.com/thorstenkramm/dendrite-pulse/internal/ping"
 )
@@ -22,6 +23,7 @@ import (
 type Config struct {
 	Logger      *slog.Logger
 	LogRequests bool
+	FileService *files.Service
 }
 
 // Run starts the HTTP server on the given address (e.g., ":3000") and blocks until shutdown.
@@ -62,7 +64,6 @@ func buildRouter(cfg Config) *echo.Echo {
 	e.HideBanner = true
 	e.HidePort = true
 
-	e.Pre(middleware.RemoveTrailingSlash())
 	e.Use(middleware.Recover())
 
 	if cfg.LogRequests && cfg.Logger != nil {
@@ -75,6 +76,9 @@ func buildRouter(cfg Config) *echo.Echo {
 	e.HTTPErrorHandler = jsonAPIErrorHandler
 
 	ping.RegisterRoutes(e)
+	if cfg.FileService != nil {
+		files.RegisterRoutes(e, cfg.FileService)
+	}
 
 	return e
 }

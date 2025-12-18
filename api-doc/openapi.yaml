@@ -13,6 +13,10 @@ servers:
 paths:
   /api/v1/ping:
     $ref: ./paths/ping.yaml
+  /api/v1/files:
+    $ref: ./paths/files.yaml#/~1api~1v1~1files
+  /api/v1/files/{resourcePath}:
+    $ref: ./paths/files.yaml#/~1api~1v1~1files~1{resourcePath}
 security: []
 components:
   schemas:
@@ -28,3 +32,9 @@ components:
       $ref: ./components/schemas/ping.yaml#/ErrorObject
     ErrorResponse:
       $ref: ./components/schemas/ping.yaml#/ErrorResponse
+    FileAttributes:
+      $ref: ./components/schemas/files.yaml#/FileAttributes
+    FileResource:
+      $ref: ./components/schemas/files.yaml#/FileResource
+    FileCollectionResponse:
+      $ref: ./components/schemas/files.yaml#/FileCollectionResponse

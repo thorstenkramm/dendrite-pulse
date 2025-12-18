@@ -32,6 +32,9 @@ To run all linters and tests, locally proceed as follows:
 # Go lint
 golangci-lint run
 
+# Go lint with Linux (worth doing on macOS)
+docker run --rm -v $(pwd):/app -w /app golangci/golangci-lint:v2.5.0 golangci-lint run ./...
+
 # Go tests
 go test -race -v ./...
 
@@ -60,13 +63,16 @@ act --container-architecture linux/amd64 push -P ubuntu-latest=ghcr.io/catthehac
 Configuration uses TOML with `main` and `log` sections. The default file path is `/etc/dendrite/dendrite.conf`
 and can be changed via `--config`.
 
+File roots are required and map virtual folders to real directories. Use `--file-root /virtual:/source` (repeatable or
+comma-separated) or `DENDRITE_FILE_ROOT` with the same syntax. In TOML, use `[[file-root]]` tables.
+
 Defaults (listen `127.0.0.1`, port `3000`, log-level `info`, log-format `text`, logging off) are applied first, then
 values are overridden in this order:
 
-- Config file (`main.listen`, `main.port`, `log.level`, `log.format`, `log.file`)
+- Config file (`main.listen`, `main.port`, `log.level`, `log.format`, `log.file`, `file-root`)
 - Environment variables (`DENDRITE_MAIN_LISTEN`, `DENDRITE_MAIN_PORT`, `DENDRITE_LOG_FILE`, `DENDRITE_LOG_LEVEL`,
-  `DENDRITE_LOG_FORMAT`)
-- Command-line flags (`--listen`, `--port`, `--log-file`, `--log-level`, `--log-format`)
+  `DENDRITE_LOG_FORMAT`, `DENDRITE_FILE_ROOT`)
+- Command-line flags (`--listen`, `--port`, `--log-file`, `--log-level`, `--log-format`, `--file-root`)
 
 Example config:
 
@@ -79,6 +85,10 @@ port = 3000
 level = "info"
 format = "json"
 file = "/var/log/dendrite.log"
+
+[[file-root]]
+virtual = "/public"
+source = "/var/www/public"
 ```
 
 Validate configuration without starting the server:

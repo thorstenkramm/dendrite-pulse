@@ -23,6 +23,7 @@ profile.cov
 # Go workspace file
 go.work
 go.work.sum
+.gocache
 
 # env file
 .env
@@ -40,3 +41,9 @@ go.work.sum
 # Exported API Docs
 index.html
 /dendrite.log
+
+# Temporary files
+tmp
+
+# Local helper scripts
+run-all-tests.sh

@@ -1,0 +1,78 @@
+/api/v1/files:
+  get:
+    summary: List configured file roots
+    tags:
+      - Files
+    operationId: listFileRoots
+    responses:
+      "200":
+        description: JSON:API collection of available file roots.
+        content:
+          application/vnd.api+json:
+            schema:
+              $ref: ../components/schemas/files.yaml#/FileCollectionResponse
+      "400":
+        description: Bad request.
+        content:
+          application/vnd.api+json:
+            schema:
+              $ref: ../components/schemas/ping.yaml#/ErrorResponse
+      "403":
+        description: Access denied.
+        content:
+          application/vnd.api+json:
+            schema:
+              $ref: ../components/schemas/ping.yaml#/ErrorResponse
+      "404":
+        description: Root not found.
+        content:
+          application/vnd.api+json:
+            schema:
+              $ref: ../components/schemas/ping.yaml#/ErrorResponse
+/api/v1/files/{resourcePath}:
+  get:
+    summary: Get directory listing or download a file
+    tags:
+      - Files
+    operationId: getFiles
+    parameters:
+      - in: path
+        name: resourcePath
+        required: true
+        description: >
+          Virtual path starting with the configured root (e.g., `public/reports/q1.xlsx`).
+          When the virtual root is `/`, URL-encode the leading slash as `%2F`.
+        schema:
+          type: string
+        style: simple
+        explode: false
+        allowReserved: true
+    responses:
+      "200":
+        description: Directory listing or file content.
+        content:
+          application/vnd.api+json:
+            schema:
+              $ref: ../components/schemas/files.yaml#/FileCollectionResponse
+          "*/*":
+            schema:
+              type: string
+              format: binary
+      "400":
+        description: Invalid path.
+        content:
+          application/vnd.api+json:
+            schema:
+              $ref: ../components/schemas/ping.yaml#/ErrorResponse
+      "403":
+        description: Permission denied.
+        content:
+          application/vnd.api+json:
+            schema:
+              $ref: ../components/schemas/ping.yaml#/ErrorResponse
+      "404":
+        description: File or directory not found.
+        content:
+          application/vnd.api+json:
+            schema:
+              $ref: ../components/schemas/ping.yaml#/ErrorResponse

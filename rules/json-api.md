@@ -37,10 +37,10 @@ Example of a response with a single object, e.g. `GET /files/some-folder/report.
     "id": "report.pdf",
     "type": "files",
     "attributes": {
-      "fileName": "report.pdf",
-      "fileSize": "2 MB",
-      "lastModified": "2025-11-30T12:34:56Z",
-      "sizeBytes": 2100000
+      "file_name": "report.pdf",
+      "file_size": "2 MB",
+      "last_modified": "2025-11-30T12:34:56Z",
+      "size_bytes": 2100000
     },
     "links": {
       "self": "/files/some-folder/report.pdf"
@@ -79,10 +79,10 @@ A properly formatted JSON:API response for a list of files might look like this:
       "id": "a1b2c3",
       "type": "files",
       "attributes": {
-        "fileName": "report.pdf",
-        "fileSize": "2 MB",
-        "lastModified": "2025-11-30T12:34:56Z",
-        "sizeBytes": 2100000
+        "file_name": "report.pdf",
+        "file_size": "2 MB",
+        "last_modified": "2025-11-30T12:34:56Z",
+        "size_bytes": 2100000
       },
       "links": {
         "self": "/files/some-folder/report.pdf"
@@ -92,10 +92,10 @@ A properly formatted JSON:API response for a list of files might look like this:
       "id": "d4e5f6",
       "type": "files",
       "attributes": {
-        "fileName": "photo.png",
-        "fileSize": "500 KB",
-        "lastModified": "2025-12-01T08:15:30Z",
-        "sizeBytes": 512000
+        "file_name": "photo.png",
+        "file_size": "500 KB",
+        "last_modified": "2025-12-01T08:15:30Z",
+        "size_bytes": 512000
       },
       "links": {
         "self": "/files/some-folder/photo.png"
@@ -122,10 +122,10 @@ For comparison, here’s an incorrectly formatted response and why it violates J
     {
       "id": "a1b2c3",
       "type": "files",
-      "fileName": "report.pdf",
-      "fileSize": "2 MB",
-      "lastModified": "2025-11-30T12:34:56Z",
-      "sizeBytes": 2100000
+      "file_name": "report.pdf",
+      "file_size": "2 MB",
+      "last_modified": "2025-11-30T12:34:56Z",
+      "size_bytes": 2100000
     }
   ]
 }
@@ -196,6 +196,28 @@ JSON:API supports additional top-level members to enrich responses. These are op
 conveying extra stats, links for HATEOAS-style navigation, and included for bundling related data. If you use them, just
 ensure they follow the spec’s structure.
 
+## Case style for API responses
+
+- For attributes always use snake_case. Like `first_name`, `created_at`.
+- For resource type, use a kebab-case, like `user-profiles` or `line-items`
+
+## Trailing slashes
+
+General REST best practice for trailing slashes must be implemented.  
+`/api/v1/files/foo` and `/api/v1/files/foo/` are two different URIs from an HTTP and RFC standpoint.
+Accessing a resource with a trailing slash must lead to an error.
+
+The common convention in APIs is:
+
+- Collections as plural nouns, no trailing slash: /files
+- Elements without trailing slash: /files/foo
+
+Requests to the “wrong” form:
+
+- send 308 redirect to the canonical URL
+- 404 if you want to be strict.
+- Serving identical content on both without redirect is discouraged (duplicate URLs, cache fragmentation, SEO / client confusion).
+
 ## Implementing JSON:API Responses in Echo
 
 In your Go Echo application, you will construct responses according to this JSON:API structure and return them as JSON.
@@ -216,3 +238,22 @@ By following this guide, you ensure your Go Echo server’s responses are format
 consistent, self-descriptive JSON output that clients (and other developers) can reliably understand and use. With the
 examples above as templates, you can confidently construct both successful resource responses and error messages in a
 JSON:API-compliant way. Good luck, and happy coding!
+
+## Date and Time
+
+- date and time must be formatted according to RFC 3339. Like `2025-01-14T16:32:45Z`, `2025-01-14T16:32:45.123+01:00`
+- all file names indicating a date time value must have a trailing `_at` like `created_at`.
+- For ranges the suffixed `_from` or `_until` must be used. Example: `valid_from` or  `valid_until`.
+- All dates and times must be returned in UTC.
+- Dates and time must include the time zone explicitly.
+
+  ```json
+  {
+    "created_at": "2025-01-14T16:32:45Z",
+    "valid_until": "2025-12-31T23:59:59+02:00"
+  }
+  ```
+  
+## Pagination
+
+Pagination will be implemented offset-based supporting `page[limit]` and page`[offset]`.

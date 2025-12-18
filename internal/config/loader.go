@@ -6,6 +6,7 @@ import (
 	"io/fs"
 	"strings"
 
+	"github.com/mitchellh/mapstructure"
 	"github.com/spf13/viper"
 )
 
@@ -34,7 +35,7 @@ func (l *Loader) Load(configPath string) (Config, error) {
 	v.SetDefault("log.format", defaultLogFmt)
 
 	v.SetEnvPrefix("DENDRITE")
-	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_", "-", "_"))
 	v.AutomaticEnv()
 
 	if err := v.ReadInConfig(); err != nil {
@@ -49,8 +50,19 @@ func (l *Loader) Load(configPath string) (Config, error) {
 	}
 
 	var cfg Config
-	if err := v.Unmarshal(&cfg); err != nil {
+	settings := v.AllSettings()
+	delete(settings, "file-root")
+
+	if err := decodeSettings(settings, &cfg); err != nil {
 		return cfg, fmt.Errorf("unmarshal config: %w", err)
+	}
+
+	roots, err := decodeFileRoots(v.Get("file-root"))
+	if err != nil {
+		return cfg, err
+	}
+	if len(roots) > 0 {
+		cfg.FileRoots = roots
 	}
 
 	if err := Validate(cfg); err != nil {
@@ -63,4 +75,82 @@ func (l *Loader) Load(configPath string) (Config, error) {
 // Load is a convenience wrapper that uses a fresh Viper instance.
 func Load(configPath string) (Config, error) {
 	return NewLoader(viper.New()).Load(configPath)
+}
+
+func parseFileRootDefinitions(defs []string) ([]FileRoot, error) {
+	var roots []FileRoot
+
+	for i, def := range defs {
+		if def == "" {
+			return nil, fmt.Errorf("file root %d: empty definition", i)
+		}
+
+		entries := strings.Split(def, ",")
+		for j, entry := range entries {
+			if entry == "" {
+				return nil, fmt.Errorf("file root %d entry %d: empty definition", i, j)
+			}
+
+			parts := strings.SplitN(entry, ":", 2)
+			if len(parts) != 2 {
+				return nil, fmt.Errorf("file root %d entry %d: expected format virtual:source", i, j)
+			}
+
+			virtual := parts[0]
+			source := parts[1]
+
+			if virtual == "" || source == "" {
+				return nil, fmt.Errorf("file root %d entry %d: virtual and source must be non-empty", i, j)
+			}
+
+			roots = append(roots, FileRoot{
+				Virtual: virtual,
+				Source:  source,
+			})
+		}
+	}
+
+	return roots, nil
+}
+
+func decodeSettings(settings map[string]interface{}, cfg *Config) error {
+	decoder, err := mapstructure.NewDecoder(&mapstructure.DecoderConfig{
+		TagName: "mapstructure",
+		Result:  cfg,
+	})
+	if err != nil {
+		return fmt.Errorf("init decoder: %w", err)
+	}
+	if err := decoder.Decode(settings); err != nil {
+		return fmt.Errorf("decode config: %w", err)
+	}
+	return nil
+}
+
+func decodeFileRoots(raw interface{}) ([]FileRoot, error) {
+	if raw == nil {
+		return nil, nil
+	}
+
+	if s, ok := raw.(string); ok && s != "" {
+		return parseFileRootDefinitions([]string{s})
+	}
+
+	if defs, ok := raw.([]string); ok && len(defs) > 0 {
+		return parseFileRootDefinitions(defs)
+	}
+
+	var roots []FileRoot
+	decoder, err := mapstructure.NewDecoder(&mapstructure.DecoderConfig{
+		TagName: "mapstructure",
+		Result:  &roots,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("init file root decoder: %w", err)
+	}
+	if err := decoder.Decode(raw); err != nil {
+		return nil, fmt.Errorf("decode file roots: %w", err)
+	}
+
+	return roots, nil
 }

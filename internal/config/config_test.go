@@ -24,8 +24,9 @@ func TestValidateListenAddress(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			cfg := Config{
-				Main: MainConfig{Listen: tt.listen, Port: 3000},
-				Log:  LogConfig{Level: "info", Format: "text"},
+				Main:      MainConfig{Listen: tt.listen, Port: 3000},
+				Log:       LogConfig{Level: "info", Format: "text"},
+				FileRoots: []FileRoot{{Virtual: "/public", Source: t.TempDir()}},
 			}
 			err := Validate(cfg)
 			if tt.wantErr == "" {
@@ -55,8 +56,9 @@ func TestValidatePort(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			cfg := Config{
-				Main: MainConfig{Listen: "127.0.0.1", Port: tt.port},
-				Log:  LogConfig{Level: "info", Format: "text"},
+				Main:      MainConfig{Listen: "127.0.0.1", Port: tt.port},
+				Log:       LogConfig{Level: "info", Format: "text"},
+				FileRoots: []FileRoot{{Virtual: "/public", Source: t.TempDir()}},
 			}
 			err := Validate(cfg)
 			if tt.wantErr == "" {
@@ -87,8 +89,9 @@ func TestValidateLogLevel(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			cfg := Config{
-				Main: MainConfig{Listen: "127.0.0.1", Port: 3000},
-				Log:  LogConfig{Level: tt.level, Format: "text"},
+				Main:      MainConfig{Listen: "127.0.0.1", Port: 3000},
+				Log:       LogConfig{Level: tt.level, Format: "text"},
+				FileRoots: []FileRoot{{Virtual: "/public", Source: t.TempDir()}},
 			}
 			err := Validate(cfg)
 			if tt.wantErr == "" {
@@ -117,8 +120,9 @@ func TestValidateLogFormat(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			cfg := Config{
-				Main: MainConfig{Listen: "127.0.0.1", Port: 3000},
-				Log:  LogConfig{Level: "info", Format: tt.format},
+				Main:      MainConfig{Listen: "127.0.0.1", Port: 3000},
+				Log:       LogConfig{Level: "info", Format: tt.format},
+				FileRoots: []FileRoot{{Virtual: "/public", Source: t.TempDir()}},
 			}
 			err := Validate(cfg)
 			if tt.wantErr == "" {
@@ -132,6 +136,9 @@ func TestValidateLogFormat(t *testing.T) {
 }
 
 func TestLoadConvenienceWrapper(t *testing.T) {
+	root := t.TempDir()
+	t.Setenv("DENDRITE_FILE_ROOT", "/env:"+root)
+
 	cfg, err := Load("/nonexistent/path/config.toml")
 	require.NoError(t, err)
 
@@ -145,7 +152,69 @@ func TestNewLoaderWithNilViper(t *testing.T) {
 	loader := NewLoader(nil)
 	require.NotNil(t, loader)
 
+	root := t.TempDir()
+	t.Setenv("DENDRITE_FILE_ROOT", "/env:"+root)
+
 	cfg, err := loader.Load("/nonexistent/path/config.toml")
 	require.NoError(t, err)
 	assert.Equal(t, defaultListen, cfg.Main.Listen)
+}
+
+func TestValidateFileRootColon(t *testing.T) {
+	root := t.TempDir()
+
+	tests := []struct {
+		name    string
+		virtual string
+		source  string
+		wantErr string
+	}{
+		{"colon in virtual rejected", "/pub:lic", root, "virtual path cannot contain a colon"},
+		{"colon in source rejected", "/public", root + ":extra", "source path cannot contain a colon"},
+		{"no colon valid", "/public", root, ""},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cfg := Config{
+				Main:      MainConfig{Listen: "127.0.0.1", Port: 3000},
+				Log:       LogConfig{Level: "info", Format: "text"},
+				FileRoots: []FileRoot{{Virtual: tt.virtual, Source: tt.source}},
+			}
+			err := Validate(cfg)
+			if tt.wantErr == "" {
+				require.NoError(t, err)
+			} else {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestValidateFileRootSlash(t *testing.T) {
+	root := t.TempDir()
+
+	// Virtual "/" should be valid
+	cfg := Config{
+		Main:      MainConfig{Listen: "127.0.0.1", Port: 3000},
+		Log:       LogConfig{Level: "info", Format: "text"},
+		FileRoots: []FileRoot{{Virtual: "/", Source: root}},
+	}
+	err := Validate(cfg)
+	require.NoError(t, err)
+}
+
+func TestValidateFileRootMultiFolder(t *testing.T) {
+	root := t.TempDir()
+
+	// Multi-folder virtual path should be rejected
+	cfg := Config{
+		Main:      MainConfig{Listen: "127.0.0.1", Port: 3000},
+		Log:       LogConfig{Level: "info", Format: "text"},
+		FileRoots: []FileRoot{{Virtual: "/public/nested", Source: root}},
+	}
+	err := Validate(cfg)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "must be '/' or a single folder")
 }

@@ -1,0 +1,120 @@
+FileAttributes:
+  type: object
+  required:
+    - name
+    - resource_kind
+    - permission_mode
+    - user
+    - group
+    - user_id
+    - group_id
+    - mime_type
+  properties:
+    name:
+      type: string
+      description: Base name of the entry.
+      example: report.pdf
+    resource_kind:
+      type: string
+      description: Entry kind (file, folder, or symlink). Named resource_kind to avoid confusion with JSON:API type field.
+      enum:
+        - file
+        - folder
+        - symlink
+    size_bytes:
+      type:
+        - integer
+        - "null"
+      format: int64
+      description: Size in bytes for files; null for folders and symlinks.
+      example: 2048
+    permission_mode:
+      type: string
+      description: Octal permission mode.
+      example: "0644"
+    user:
+      type: string
+      description: File owner.
+      example: johndoe
+    group:
+      type: string
+      description: File group.
+      example: users
+    user_id:
+      type: integer
+      description: File owner user ID.
+      example: 1000
+    group_id:
+      type: integer
+      description: File group ID.
+      example: 1000
+    mime_type:
+      type: string
+      description: MIME type detected for the entry.
+      example: application/pdf
+    accessed_at:
+      type:
+        - string
+        - "null"
+      format: date-time
+      description: Last access time in RFC 3339 UTC.
+    modified_at:
+      type:
+        - string
+        - "null"
+      format: date-time
+      description: Last modification time in RFC 3339 UTC.
+    changed_at:
+      type:
+        - string
+        - "null"
+      format: date-time
+      description: Last metadata change time in RFC 3339 UTC.
+    born_at:
+      type:
+        - string
+        - "null"
+      format: date-time
+      description: Creation time in RFC 3339 UTC if available.
+FileResource:
+  type: object
+  required:
+    - type
+    - id
+    - attributes
+  properties:
+    type:
+      type: string
+      enum:
+        - files
+    id:
+      type: string
+      description: Virtual path to the resource.
+      example: /public/reports/summary.pdf
+    attributes:
+      $ref: '#/FileAttributes'
+    links:
+      type: object
+      properties:
+        self:
+          type: string
+          format: uri
+          description: URL to this resource.
+FileCollectionResponse:
+  type: object
+  required:
+    - data
+    - links
+  properties:
+    data:
+      type: array
+      items:
+        $ref: '#/FileResource'
+    links:
+      type: object
+      required:
+        - self
+      properties:
+        self:
+          type: string
+          format: uri

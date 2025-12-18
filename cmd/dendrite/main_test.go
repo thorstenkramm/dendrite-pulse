@@ -76,6 +76,8 @@ func TestRunServerConfigCheck(t *testing.T) {
 	// Create a temporary config file
 	tmpDir := t.TempDir()
 	cfgPath := filepath.Join(tmpDir, "config.toml")
+	rootDir := filepath.Join(tmpDir, "root")
+	require.NoError(t, os.MkdirAll(rootDir, 0o750))
 	cfgContent := `
 [main]
 listen = "127.0.0.1"
@@ -84,6 +86,10 @@ port = 8080
 [log]
 level = "info"
 format = "text"
+
+[[file-root]]
+virtual = "/public"
+source = "` + rootDir + `"
 `
 	require.NoError(t, os.WriteFile(cfgPath, []byte(cfgContent), 0o600))
 
@@ -113,10 +119,16 @@ func TestRunServerInvalidConfig(t *testing.T) {
 	// Create an invalid config file
 	tmpDir := t.TempDir()
 	cfgPath := filepath.Join(tmpDir, "invalid.toml")
+	rootDir := filepath.Join(tmpDir, "root")
+	require.NoError(t, os.MkdirAll(rootDir, 0o750))
 	cfgContent := `
 [main]
 listen = "not-an-ip"
 port = 8080
+
+[[file-root]]
+virtual = "/public"
+source = "` + rootDir + `"
 `
 	require.NoError(t, os.WriteFile(cfgPath, []byte(cfgContent), 0o600))
 

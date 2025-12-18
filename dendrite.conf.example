@@ -26,3 +26,9 @@
 # Can be overridden with --log-format flag or DENDRITE_LOG_FORMAT environment variable.
 # Default: text
 #format = "text"
+
+[[file-root]]
+# Virtual root name (single folder starting with /)
+# Must be paired with a source directory that exists.
+#virtual = "/public"
+#source = "/var/www/public"
