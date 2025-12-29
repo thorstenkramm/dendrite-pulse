@@ -160,6 +160,9 @@ func parseVirtualPath(c echo.Context, roots []Root) (Root, string, error) {
 	return root, rel, nil
 }
 
+// matchRoot finds the best matching root for a request path.
+// Roots are matched longest-prefix-first to correctly handle nested virtual paths.
+// Returns the matched root, the relative path within that root, and whether a match was found.
 func matchRoot(requestPath string, roots []Root) (Root, string, bool) {
 	sorted := make([]Root, len(roots))
 	copy(sorted, roots)

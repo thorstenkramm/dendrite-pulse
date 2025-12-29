@@ -127,6 +127,9 @@ func decodeSettings(settings map[string]interface{}, cfg *Config) error {
 	return nil
 }
 
+// decodeFileRoots handles multiple input formats for file root configuration:
+// string (single definition), []string (CLI flags), or []map (TOML array of tables).
+// Returns nil without error if raw is nil.
 func decodeFileRoots(raw interface{}) ([]FileRoot, error) {
 	if raw == nil {
 		return nil, nil

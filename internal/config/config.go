@@ -2,11 +2,30 @@
 package config
 
 import (
+	"errors"
 	"fmt"
 	"net"
 	"os"
 	"path/filepath"
 	"strings"
+)
+
+// Validation errors that callers can check with errors.Is.
+var (
+	// ErrInvalidListenAddress indicates the listen address is not a valid IP.
+	ErrInvalidListenAddress = errors.New("invalid listen address")
+
+	// ErrInvalidPort indicates the port number is out of range.
+	ErrInvalidPort = errors.New("invalid port")
+
+	// ErrInvalidLogLevel indicates an unsupported log level.
+	ErrInvalidLogLevel = errors.New("invalid log level")
+
+	// ErrInvalidLogFormat indicates an unsupported log format.
+	ErrInvalidLogFormat = errors.New("invalid log format")
+
+	// ErrNoFileRoots indicates no file roots were configured.
+	ErrNoFileRoots = errors.New("no file roots configured")
 )
 
 // Config represents application configuration.
@@ -45,24 +64,24 @@ const (
 // Validate validates configuration fields.
 func Validate(cfg Config) error {
 	if ip := net.ParseIP(cfg.Main.Listen); ip == nil {
-		return fmt.Errorf("invalid listen address: %s", cfg.Main.Listen)
+		return fmt.Errorf("%w: %s", ErrInvalidListenAddress, cfg.Main.Listen)
 	}
 	if cfg.Main.Port < 1 || cfg.Main.Port > 65535 {
-		return fmt.Errorf("invalid port: %d", cfg.Main.Port)
+		return fmt.Errorf("%w: %d", ErrInvalidPort, cfg.Main.Port)
 	}
 
 	level := strings.ToLower(cfg.Log.Level)
 	switch level {
 	case "debug", "info", "warn", "error":
 	default:
-		return fmt.Errorf("invalid log level: %s", cfg.Log.Level)
+		return fmt.Errorf("%w: %s", ErrInvalidLogLevel, cfg.Log.Level)
 	}
 
 	format := strings.ToLower(cfg.Log.Format)
 	switch format {
 	case "text", "json":
 	default:
-		return fmt.Errorf("invalid log format: %s", cfg.Log.Format)
+		return fmt.Errorf("%w: %s", ErrInvalidLogFormat, cfg.Log.Format)
 	}
 
 	return validateFileRoots(cfg.FileRoots)
@@ -70,7 +89,7 @@ func Validate(cfg Config) error {
 
 func validateFileRoots(roots []FileRoot) error {
 	if len(roots) == 0 {
-		return fmt.Errorf("no file roots configured")
+		return ErrNoFileRoots
 	}
 
 	seenVirtuals := make(map[string]struct{})

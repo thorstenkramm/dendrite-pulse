@@ -51,6 +51,7 @@ idiomatic APIs.
   - `./rules/techstack.md` Details about Go version and mandatory modules
   - `./rules/markdown.md` Details about how to format markdown files
   - `./rules/json-api.md` Details about how to handle and format requests and responses
+  - `./rules/golang.md` Go style guidelines (error handling, documentation, shared types)
   Always review them before making changes.
 - Expect Go sources to live under `cmd/dendrite/` for the service entrypoint and `internal/` for domain logic;
   place reusable libraries in `pkg/` only when needed.

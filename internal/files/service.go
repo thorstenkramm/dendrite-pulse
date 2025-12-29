@@ -29,6 +29,7 @@ type Root struct {
 }
 
 // Service exposes file operations scoped to configured roots.
+// Service is safe for concurrent use after construction via NewService.
 type Service struct {
 	roots   map[string]Root
 	ordered []Root
@@ -251,6 +252,9 @@ func classify(info os.FileInfo) string {
 	}
 }
 
+// cleanRelativePath validates and normalizes a relative path, preventing directory
+// traversal attacks via ".." segments. Returns ErrOutsideRoot if the path would
+// escape the root directory.
 func cleanRelativePath(rel string) (string, error) {
 	if hasTraversal(rel) {
 		return "", fmt.Errorf("%w: %s", ErrOutsideRoot, rel)
