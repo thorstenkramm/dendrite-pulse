@@ -39,7 +39,9 @@ jobs:
         run: go mod tidy && golangci-lint run
 
       - name: Run Go tests
-        run: go test -race -v ./...
+        run: |
+          go get github.com/thorstenkramm/fillfs/cmd/fillfs
+          go test -race -v ./...
 
       - name: Install Node.js 20
         run: |
