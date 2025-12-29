@@ -97,8 +97,8 @@ func jsonAPIErrorHandler(err error, c echo.Context) {
 		}
 	}
 
-	payload := ErrorResponse{
-		Errors: []ErrorObject{
+	payload := api.ErrorResponse{
+		Errors: []api.ErrorObject{
 			{
 				Status: fmt.Sprintf("%d", code),
 				Title:  http.StatusText(code),

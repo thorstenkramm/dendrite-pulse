@@ -25,6 +25,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/thorstenkramm/dendrite-pulse/internal/api"
 	"github.com/thorstenkramm/dendrite-pulse/internal/config"
 	"github.com/thorstenkramm/dendrite-pulse/internal/files"
 	"github.com/thorstenkramm/dendrite-pulse/internal/server"
@@ -59,6 +60,14 @@ func TestRootCmdFlags(t *testing.T) {
 	listenFlag := cmd.PersistentFlags().Lookup("listen")
 	require.NotNil(t, listenFlag)
 	assert.Equal(t, "127.0.0.1", listenFlag.DefValue)
+
+	maxUploadFlag := cmd.PersistentFlags().Lookup("max-upload-size")
+	require.NotNil(t, maxUploadFlag)
+	assert.Equal(t, "2GB", maxUploadFlag.DefValue)
+
+	fileModeFlag := cmd.PersistentFlags().Lookup("file-mode")
+	require.NotNil(t, fileModeFlag)
+	assert.Equal(t, "0600", fileModeFlag.DefValue)
 
 	configFlag := cmd.PersistentFlags().Lookup("config")
 	require.NotNil(t, configFlag)
@@ -166,6 +175,7 @@ func TestEndToEndFileAPI(t *testing.T) {
 	cfgPath := writeTestConfig(t, repoRoot, root1, root2)
 	baseURL, client := startTestServer(t, cfgPath)
 	assertRootListing(t, client, baseURL)
+	uploadLargeFile(t, testrunDir, baseURL, "/01-test-run", root1)
 	compareDirectoryListings(t, client, baseURL, "/01-test-run", root1)
 	compareDirectoryListings(t, client, baseURL, "/02-test-run", root2)
 
@@ -212,6 +222,62 @@ func populateTestRoots(t *testing.T, repoRoot, testrunDir, root1, root2 string) 
 	runFillFS(t, repoRoot, root2, cacheDir)
 }
 
+func uploadLargeFile(t *testing.T, testrunDir, baseURL, rootVirtual, rootPath string) {
+	t.Helper()
+
+	sourcePath := filepath.Join(testrunDir, "large-upload-source.bin")
+	createLargeFile(t, sourcePath)
+
+	// #nosec G304 -- path is generated in the test testrun directory.
+	file, err := os.Open(sourcePath)
+	require.NoError(t, err)
+	defer func() {
+		_ = file.Close()
+	}()
+
+	destName := "large.bin"
+	uploadURL := baseURL + "/api/v1/files" + path.Join(rootVirtual, destName)
+	req, err := http.NewRequest(http.MethodPut, uploadURL, file)
+	require.NoError(t, err)
+	req.Header.Set("Content-Type", "application/octet-stream")
+
+	uploadClient := &http.Client{Timeout: 10 * time.Minute}
+	resp, err := uploadClient.Do(req)
+	require.NoError(t, err)
+	defer func() {
+		_ = resp.Body.Close()
+	}()
+
+	if resp.StatusCode != http.StatusCreated && resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		t.Fatalf("unexpected upload status %d: %s", resp.StatusCode, string(body))
+	}
+
+	var parsed api.SingleResponse[files.Resource]
+	require.NoError(t, json.NewDecoder(resp.Body).Decode(&parsed))
+	require.NotNil(t, parsed.Data.Attributes.SizeBytes)
+
+	targetPath := filepath.Join(rootPath, destName)
+	info, err := os.Stat(targetPath)
+	require.NoError(t, err)
+	assert.Equal(t, info.Size(), *parsed.Data.Attributes.SizeBytes)
+	assert.Equal(t, destName, parsed.Data.Attributes.Name)
+	require.NotNil(t, parsed.Data.Attributes.ETag)
+	assert.NotEmpty(t, *parsed.Data.Attributes.ETag)
+}
+
+func createLargeFile(t *testing.T, path string) {
+	t.Helper()
+
+	// #nosec G304 -- path is generated in test temp directory.
+	file, err := os.Create(path)
+	require.NoError(t, err)
+	defer func() { _ = file.Close() }()
+
+	const oneGiB = int64(1024 * 1024 * 1024)
+	require.NoError(t, file.Truncate(oneGiB))
+}
+
 func startTestServer(t *testing.T, cfgPath string) (string, *http.Client) {
 	t.Helper()
 
@@ -226,7 +292,15 @@ func startTestServer(t *testing.T, cfgPath string) (string, *http.Client) {
 		})
 	}
 
-	fileSvc, err := files.NewService(fileRoots)
+	maxUploadBytes, err := config.ParseMaxUploadSize(cfg.Main.MaxUploadSize)
+	require.NoError(t, err)
+	fileMode, err := config.ParseFileMode(cfg.Main.FileMode)
+	require.NoError(t, err)
+
+	fileSvc, err := files.NewService(fileRoots, files.Options{
+		MaxUploadBytes: maxUploadBytes,
+		FileMode:       fileMode,
+	})
 	require.NoError(t, err)
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -303,7 +377,7 @@ func cryptoRandIndex(t *testing.T, upper int) int {
 func validateFileEntries(t *testing.T, client *http.Client, baseURL string, entries []fileEntry) {
 	t.Helper()
 
-	listingCache := make(map[string]files.Response)
+	listingCache := make(map[string]api.CollectionResponse[files.Resource])
 	for _, entry := range entries {
 		parentRel := path.Dir(entry.RelPath)
 		if parentRel == "." {
@@ -354,6 +428,8 @@ func writeTestConfig(t *testing.T, repoRoot, root1, root2 string) string {
 [main]
 listen = "127.0.0.1"
 port = 24499
+max_upload_size = "2GB"
+file_mode = "0600"
 
 [[file-root]]
 virtual = "/01-test-run"
@@ -541,7 +617,7 @@ func fetchListing(
 	client *http.Client,
 	baseURL string,
 	apiPath string,
-) files.Response {
+) api.CollectionResponse[files.Resource] {
 	t.Helper()
 
 	req, err := http.NewRequest(http.MethodGet, baseURL+apiPath, nil)
@@ -558,12 +634,12 @@ func fetchListing(
 		t.Fatalf("unexpected status %d for %s: %s", resp.StatusCode, apiPath, string(body))
 	}
 
-	var parsed files.Response
+	var parsed api.CollectionResponse[files.Resource]
 	require.NoError(t, json.NewDecoder(resp.Body).Decode(&parsed))
 	return parsed
 }
 
-func findResource(resp files.Response, name string) (files.Resource, bool) {
+func findResource(resp api.CollectionResponse[files.Resource], name string) (files.Resource, bool) {
 	for _, resource := range resp.Data {
 		if resource.Attributes.Name == name {
 			return resource, true

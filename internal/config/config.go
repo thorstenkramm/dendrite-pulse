@@ -24,6 +24,12 @@ var (
 	// ErrInvalidLogFormat indicates an unsupported log format.
 	ErrInvalidLogFormat = errors.New("invalid log format")
 
+	// ErrInvalidMaxUploadSize indicates the max upload size is invalid.
+	ErrInvalidMaxUploadSize = errors.New("invalid max upload size")
+
+	// ErrInvalidFileMode indicates the file mode is invalid.
+	ErrInvalidFileMode = errors.New("invalid file mode")
+
 	// ErrNoFileRoots indicates no file roots were configured.
 	ErrNoFileRoots = errors.New("no file roots configured")
 )
@@ -43,8 +49,10 @@ type FileRoot struct {
 
 // MainConfig covers network binding.
 type MainConfig struct {
-	Listen string `mapstructure:"listen"`
-	Port   int    `mapstructure:"port"`
+	Listen        string `mapstructure:"listen"`
+	Port          int    `mapstructure:"port"`
+	MaxUploadSize string `mapstructure:"max_upload_size"`
+	FileMode      string `mapstructure:"file_mode"`
 }
 
 // LogConfig covers logging options.
@@ -55,10 +63,12 @@ type LogConfig struct {
 }
 
 const (
-	defaultListen   = "127.0.0.1"
-	defaultPort     = 3000
-	defaultLogLevel = "info"
-	defaultLogFmt   = "text"
+	defaultListen        = "127.0.0.1"
+	defaultPort          = 3000
+	defaultLogLevel      = "info"
+	defaultLogFmt        = "text"
+	defaultMaxUploadSize = "2GB"
+	defaultFileMode      = "0600"
 )
 
 // Validate validates configuration fields.
@@ -82,6 +92,13 @@ func Validate(cfg Config) error {
 	case "text", "json":
 	default:
 		return fmt.Errorf("%w: %s", ErrInvalidLogFormat, cfg.Log.Format)
+	}
+
+	if _, err := ParseMaxUploadSize(cfg.Main.MaxUploadSize); err != nil {
+		return fmt.Errorf("%w: %s", ErrInvalidMaxUploadSize, err.Error())
+	}
+	if _, err := ParseFileMode(cfg.Main.FileMode); err != nil {
+		return fmt.Errorf("%w: %s", ErrInvalidFileMode, err.Error())
 	}
 
 	return validateFileRoots(cfg.FileRoots)

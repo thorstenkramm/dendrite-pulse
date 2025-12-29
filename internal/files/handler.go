@@ -32,6 +32,8 @@ func RegisterRoutes(e *echo.Echo, svc *Service) {
 	files := e.Group("/api/v1/files")
 	files.GET("", h.listRoots)
 	files.GET("/*", h.getResource)
+	files.POST("/*", h.createFile)
+	files.PUT("/*", h.putFile)
 }
 
 // Handler serves file and directory requests.
@@ -122,8 +124,9 @@ func (h Handler) serveFile(c echo.Context, desc Descriptor) error {
 	return nil
 }
 
+// parseVirtualPath validates and decodes virtual paths, rejecting encoded separators and backslashes.
 func parseVirtualPath(c echo.Context, roots []Root) (Root, string, error) {
-	raw := c.Request().URL.RawPath
+	raw := c.Request().URL.EscapedPath()
 	if raw == "" {
 		raw = c.Request().URL.Path
 	}
@@ -144,10 +147,17 @@ func parseVirtualPath(c echo.Context, roots []Root) (Root, string, error) {
 	}
 
 	rest = strings.TrimPrefix(rest, "/")
+	lower := strings.ToLower(rest)
+	if strings.Contains(lower, "%2f") || strings.Contains(lower, "%5c") {
+		return Root{}, "", echo.NewHTTPError(http.StatusBadRequest, "encoded path separators are not allowed")
+	}
 
 	decoded, err := url.PathUnescape(rest)
 	if err != nil {
 		return Root{}, "", echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("invalid path: %v", err))
+	}
+	if strings.Contains(decoded, "\\") {
+		return Root{}, "", echo.NewHTTPError(http.StatusBadRequest, "backslashes are not allowed in paths")
 	}
 
 	pathWithSlash := "/" + decoded
@@ -189,7 +199,7 @@ func matchRoot(requestPath string, roots []Root) (Root, string, bool) {
 	return Root{}, "", false
 }
 
-func collectionResponse(c echo.Context, entries []Descriptor, params ListParams) Response {
+func collectionResponse(c echo.Context, entries []Descriptor, params ListParams) api.CollectionResponse[Resource] {
 	total := len(entries)
 
 	// Apply pagination
@@ -212,8 +222,8 @@ func collectionResponse(c echo.Context, entries []Descriptor, params ListParams)
 	basePath := c.Request().URL.Path
 	links := buildPaginationLinks(basePath, params, total)
 
-	return Response{
-		Meta: &PaginationMeta{
+	return api.CollectionResponse[Resource]{
+		Meta: &api.PaginationMeta{
 			TotalCount: total,
 			Offset:     params.Offset,
 			Limit:      params.Limit,
@@ -223,7 +233,7 @@ func collectionResponse(c echo.Context, entries []Descriptor, params ListParams)
 	}
 }
 
-func buildPaginationLinks(basePath string, params ListParams, total int) *PaginationLinks {
+func buildPaginationLinks(basePath string, params ListParams, total int) *api.PaginationLinks {
 	buildURL := func(offset int) string {
 		u := fmt.Sprintf("%s?page[offset]=%d&page[limit]=%d", basePath, offset, params.Limit)
 		if params.SortField != "name" || params.Descending {
@@ -242,7 +252,7 @@ func buildPaginationLinks(basePath string, params ListParams, total int) *Pagina
 		lastOffset = ((total - 1) / params.Limit) * params.Limit
 	}
 
-	links := &PaginationLinks{
+	links := &api.PaginationLinks{
 		Self:  buildURL(params.Offset),
 		First: buildURL(0),
 		Last:  buildURL(lastOffset),
@@ -270,6 +280,7 @@ func buildPaginationLinks(basePath string, params ListParams, total int) *Pagina
 func resourceFrom(desc Descriptor) Resource {
 	attrs := Attributes{
 		Name:           desc.Metadata.Name,
+		VirtualPath:    desc.Metadata.VirtualPath,
 		ResourceKind:   desc.Metadata.ResourceKind,
 		SizeBytes:      desc.Metadata.SizeBytes,
 		PermissionMode: desc.Metadata.PermissionMode,
@@ -278,6 +289,7 @@ func resourceFrom(desc Descriptor) Resource {
 		UserID:         desc.Metadata.UserID,
 		GroupID:        desc.Metadata.GroupID,
 		MimeType:       desc.Metadata.MimeType,
+		ETag:           toOptionalString(desc.Metadata.ETag),
 		AccessedAt:     formatTime(desc.Metadata.AccessedAt),
 		ModifiedAt:     formatTime(desc.Metadata.ModifiedAt),
 		ChangedAt:      formatTime(desc.Metadata.ChangedAt),
@@ -300,6 +312,14 @@ func formatTime(t *time.Time) *string {
 	}
 	formatted := t.UTC().Format(time.RFC3339Nano)
 	return &formatted
+}
+
+func toOptionalString(value string) *string {
+	if value == "" {
+		return nil
+	}
+	v := value
+	return &v
 }
 
 func toHTTPError(err error) error {
@@ -327,29 +347,6 @@ func toHTTPError(err error) error {
 	return err
 }
 
-// Response represents a JSON:API collection envelope for files.
-type Response struct {
-	Meta  *PaginationMeta  `json:"meta,omitempty"`
-	Data  []Resource       `json:"data"`
-	Links *PaginationLinks `json:"links,omitempty"`
-}
-
-// PaginationMeta contains pagination metadata.
-type PaginationMeta struct {
-	TotalCount int `json:"total_count"`
-	Offset     int `json:"offset"`
-	Limit      int `json:"limit"`
-}
-
-// PaginationLinks contains pagination links.
-type PaginationLinks struct {
-	Self  string  `json:"self"`
-	First string  `json:"first"`
-	Last  string  `json:"last"`
-	Prev  *string `json:"prev"`
-	Next  *string `json:"next"`
-}
-
 // Resource represents a single file or folder resource.
 type Resource struct {
 	ID         string        `json:"id"`
@@ -361,6 +358,7 @@ type Resource struct {
 // Attributes captures file metadata attributes.
 type Attributes struct {
 	Name           string  `json:"name"`
+	VirtualPath    string  `json:"virtual_path"`
 	ResourceKind   string  `json:"resource_kind"`
 	SizeBytes      *int64  `json:"size_bytes"`
 	PermissionMode string  `json:"permission_mode"`
@@ -369,6 +367,7 @@ type Attributes struct {
 	UserID         int     `json:"user_id"`
 	GroupID        int     `json:"group_id"`
 	MimeType       string  `json:"mime_type"`
+	ETag           *string `json:"etag,omitempty"`
 	AccessedAt     *string `json:"accessed_at"`
 	ModifiedAt     *string `json:"modified_at"`
 	ChangedAt      *string `json:"changed_at"`

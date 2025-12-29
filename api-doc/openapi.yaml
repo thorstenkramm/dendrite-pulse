@@ -38,3 +38,5 @@ components:
       $ref: ./components/schemas/files.yaml#/FileResource
     FileCollectionResponse:
       $ref: ./components/schemas/files.yaml#/FileCollectionResponse
+    FileSingleResponse:
+      $ref: ./components/schemas/files.yaml#/FileSingleResponse

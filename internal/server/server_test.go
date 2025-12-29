@@ -51,7 +51,7 @@ func TestNotFoundHandler(t *testing.T) {
 	require.Equal(t, http.StatusNotFound, rec.Code)
 	assert.Equal(t, api.ContentType, rec.Header().Get("Content-Type"))
 
-	var resp ErrorResponse
+	var resp api.ErrorResponse
 	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &resp))
 
 	require.Len(t, resp.Errors, 1)
@@ -71,7 +71,7 @@ func TestMethodNotAllowed(t *testing.T) {
 	require.Equal(t, http.StatusMethodNotAllowed, rec.Code)
 	assert.Equal(t, api.ContentType, rec.Header().Get("Content-Type"))
 
-	var resp ErrorResponse
+	var resp api.ErrorResponse
 	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &resp))
 
 	require.Len(t, resp.Errors, 1)

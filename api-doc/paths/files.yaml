@@ -76,3 +76,184 @@
           application/vnd.api+json:
             schema:
               $ref: ../components/schemas/ping.yaml#/ErrorResponse
+  post:
+    summary: Upload a file into a virtual folder
+    tags:
+      - Files
+    operationId: uploadFileToFolder
+    parameters:
+      - in: path
+        name: resourcePath
+        required: true
+        description: >
+          Virtual folder path relative to the configured root (e.g., `public/uploads`).
+        schema:
+          type: string
+        style: simple
+        explode: false
+        allowReserved: true
+      - in: header
+        name: If-None-Match
+        required: false
+        description: Use `*` to enforce create-only behavior.
+        schema:
+          type: string
+    requestBody:
+      required: true
+      content:
+        multipart/form-data:
+          schema:
+            type: object
+            properties:
+              file:
+                type: string
+                format: binary
+    responses:
+      "201":
+        description: File created.
+        headers:
+          ETag:
+            description: Weak ETag for the uploaded file.
+            schema:
+              type: string
+          Last-Modified:
+            description: RFC 1123 timestamp of last modification.
+            schema:
+              type: string
+        content:
+          application/vnd.api+json:
+            schema:
+              $ref: ../components/schemas/files.yaml#/FileSingleResponse
+      "400":
+        description: Invalid request.
+        content:
+          application/vnd.api+json:
+            schema:
+              $ref: ../components/schemas/ping.yaml#/ErrorResponse
+      "404":
+        description: Virtual folder not found.
+        content:
+          application/vnd.api+json:
+            schema:
+              $ref: ../components/schemas/ping.yaml#/ErrorResponse
+      "409":
+        description: File already exists.
+        content:
+          application/vnd.api+json:
+            schema:
+              $ref: ../components/schemas/ping.yaml#/ErrorResponse
+      "412":
+        description: Precondition failed.
+        content:
+          application/vnd.api+json:
+            schema:
+              $ref: ../components/schemas/ping.yaml#/ErrorResponse
+      "413":
+        description: Payload too large.
+        content:
+          application/vnd.api+json:
+            schema:
+              $ref: ../components/schemas/ping.yaml#/ErrorResponse
+  put:
+    summary: Create or replace a file at an explicit path
+    tags:
+      - Files
+    operationId: uploadFileAtPath
+    parameters:
+      - in: path
+        name: resourcePath
+        required: true
+        description: >
+          Virtual path including filename (e.g., `public/uploads/report.pdf`).
+        schema:
+          type: string
+        style: simple
+        explode: false
+        allowReserved: true
+      - in: header
+        name: If-None-Match
+        required: false
+        description: Use `*` to enforce create-only behavior.
+        schema:
+          type: string
+      - in: header
+        name: If-Match
+        required: false
+        description: Require the uploaded file to match the provided weak ETag.
+        schema:
+          type: string
+    requestBody:
+      required: true
+      content:
+        application/octet-stream:
+          schema:
+            type: string
+            format: binary
+        multipart/form-data:
+          schema:
+            type: object
+            properties:
+              file:
+                type: string
+                format: binary
+    responses:
+      "201":
+        description: File created.
+        headers:
+          ETag:
+            description: Weak ETag for the uploaded file.
+            schema:
+              type: string
+          Last-Modified:
+            description: RFC 1123 timestamp of last modification.
+            schema:
+              type: string
+        content:
+          application/vnd.api+json:
+            schema:
+              $ref: ../components/schemas/files.yaml#/FileSingleResponse
+      "200":
+        description: File replaced.
+        headers:
+          ETag:
+            description: Weak ETag for the uploaded file.
+            schema:
+              type: string
+          Last-Modified:
+            description: RFC 1123 timestamp of last modification.
+            schema:
+              type: string
+        content:
+          application/vnd.api+json:
+            schema:
+              $ref: ../components/schemas/files.yaml#/FileSingleResponse
+      "400":
+        description: Invalid request.
+        content:
+          application/vnd.api+json:
+            schema:
+              $ref: ../components/schemas/ping.yaml#/ErrorResponse
+      "404":
+        description: Virtual folder not found.
+        content:
+          application/vnd.api+json:
+            schema:
+              $ref: ../components/schemas/ping.yaml#/ErrorResponse
+      "409":
+        description: File already exists.
+        content:
+          application/vnd.api+json:
+            schema:
+              $ref: ../components/schemas/ping.yaml#/ErrorResponse
+      "412":
+        description: Precondition failed.
+        content:
+          application/vnd.api+json:
+            schema:
+              $ref: ../components/schemas/ping.yaml#/ErrorResponse
+      "413":
+        description: Payload too large.
+        content:
+          application/vnd.api+json:
+            schema:
+              $ref: ../components/schemas/ping.yaml#/ErrorResponse

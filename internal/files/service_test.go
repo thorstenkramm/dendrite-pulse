@@ -67,7 +67,7 @@ func TestSymlinkOutsideRootRejected(t *testing.T) {
 func newTestService(t *testing.T, root string) *Service {
 	t.Helper()
 
-	svc, err := NewService([]Root{{Virtual: "/public", Source: root}})
+	svc, err := NewService([]Root{{Virtual: "/public", Source: root}}, defaultOptions())
 	require.NoError(t, err)
 	return svc
 }

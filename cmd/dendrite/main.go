@@ -34,11 +34,19 @@ func newRootCmd() *cobra.Command {
 
 	rootCmd.PersistentFlags().Int("port", 3000, "Port to listen on")
 	rootCmd.PersistentFlags().String("listen", "127.0.0.1", "Listen address")
+	rootCmd.PersistentFlags().String("max-upload-size", "2GB", "Max upload size (e.g. 500MB, 2GB)")
+	rootCmd.PersistentFlags().String("file-mode", "0600", "File mode for uploaded files (octal string)")
 	if err := viper.BindPFlag("main.port", rootCmd.PersistentFlags().Lookup("port")); err != nil {
 		log.Fatalf("bind port flag: %v", err)
 	}
 	if err := viper.BindPFlag("main.listen", rootCmd.PersistentFlags().Lookup("listen")); err != nil {
 		log.Fatalf("bind listen flag: %v", err)
+	}
+	if err := viper.BindPFlag("main.max_upload_size", rootCmd.PersistentFlags().Lookup("max-upload-size")); err != nil {
+		log.Fatalf("bind max-upload-size flag: %v", err)
+	}
+	if err := viper.BindPFlag("main.file_mode", rootCmd.PersistentFlags().Lookup("file-mode")); err != nil {
+		log.Fatalf("bind file-mode flag: %v", err)
 	}
 	rootCmd.PersistentFlags().String("log-level", "info", "Log level: debug, info, warn, error")
 	rootCmd.PersistentFlags().String("log-file", "", "Log file path, or '-' for stdout")
@@ -116,9 +124,9 @@ func runServer(_ *cobra.Command, _ []string) error {
 			Source:  root.Source,
 		})
 	}
-	fileSvc, err := files.NewService(fileRoots)
+	fileSvc, err := buildFileService(cfg, fileRoots)
 	if err != nil {
-		return fmt.Errorf("init file service: %w", err)
+		return err
 	}
 
 	addr := fmt.Sprintf("%s:%d", listen, port)
@@ -131,6 +139,27 @@ func runServer(_ *cobra.Command, _ []string) error {
 		return fmt.Errorf("run server: %w", err)
 	}
 	return nil
+}
+
+func buildFileService(cfg config.Config, fileRoots []files.Root) (*files.Service, error) {
+	maxUploadBytes, err := config.ParseMaxUploadSize(cfg.Main.MaxUploadSize)
+	if err != nil {
+		return nil, fmt.Errorf("parse max upload size: %w", err)
+	}
+	fileMode, err := config.ParseFileMode(cfg.Main.FileMode)
+	if err != nil {
+		return nil, fmt.Errorf("parse file mode: %w", err)
+	}
+
+	fileSvc, err := files.NewService(fileRoots, files.Options{
+		MaxUploadBytes: maxUploadBytes,
+		FileMode:       fileMode,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("init file service: %w", err)
+	}
+
+	return fileSvc, nil
 }
 
 func setupLogger(logFile, logFormat, logLevel string) (*slog.Logger, func() error, error) {

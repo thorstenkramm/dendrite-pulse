@@ -12,6 +12,16 @@
 # default: 3000
 #port = 3000
 
+# Max upload size. Supports optional units like "500MB" or "2GB".
+# Can be overridden with --max-upload-size flag or DENDRITE_MAIN_MAX_UPLOAD_SIZE environment variable.
+# Default: 2GB
+#max_upload_size = "2GB"
+
+# File mode applied to uploaded files (octal string).
+# Can be overridden with --file-mode flag or DENDRITE_MAIN_FILE_MODE environment variable.
+# Default: 0600
+#file_mode = "0600"
+
 [log]
 # Log file; if omitted, logging is turned off. Use "-" for stdout.
 # Can be overridden with --log-file flag or DENDRITE_LOG_FILE environment variable.

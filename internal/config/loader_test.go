@@ -26,6 +26,8 @@ func TestLoaderPrecedence(t *testing.T) {
 [main]
 listen = "0.0.0.0"
 port = 4000
+max_upload_size = "1GB"
+file_mode = "0640"
 
 [log]
 level = "warn"
@@ -37,25 +39,8 @@ virtual = "/cfg"
 source = "%s"
 `, configRoot))
 
-	flags := pflag.NewFlagSet("test", pflag.ContinueOnError)
-	flags.String("listen", "", "")
-	flags.Int("port", 0, "")
-	flags.String("log-level", "", "")
-	flags.String("log-file", "", "")
-	flags.String("log-format", "", "")
-	flags.StringArray("file-root", nil, "")
-	require.NoError(t, flags.Parse([]string{
-		"--port", "4002",
-		"--log-level", "debug",
-		"--file-root", "/flag:" + flagRoot,
-	}))
-
-	require.NoError(t, v.BindPFlag("main.listen", flags.Lookup("listen")))
-	require.NoError(t, v.BindPFlag("main.port", flags.Lookup("port")))
-	require.NoError(t, v.BindPFlag("log.level", flags.Lookup("log-level")))
-	require.NoError(t, v.BindPFlag("log.file", flags.Lookup("log-file")))
-	require.NoError(t, v.BindPFlag("log.format", flags.Lookup("log-format")))
-	require.NoError(t, v.BindPFlag("file-root", flags.Lookup("file-root")))
+	flags := newTestFlagSet(t, flagRoot)
+	bindTestFlags(t, v, flags)
 
 	t.Setenv("DENDRITE_LOG_FILE", "/env/logfile")
 	t.Setenv("DENDRITE_FILE_ROOT", "/env:"+envRoot)
@@ -65,6 +50,8 @@ source = "%s"
 
 	assert.Equal(t, "0.0.0.0", cfg.Main.Listen)
 	assert.Equal(t, 4002, cfg.Main.Port)
+	assert.Equal(t, "5GB", cfg.Main.MaxUploadSize)
+	assert.Equal(t, "0644", cfg.Main.FileMode)
 	assert.Equal(t, "debug", cfg.Log.Level)
 	assert.Equal(t, "/env/logfile", cfg.Log.File)
 	assert.Equal(t, "json", cfg.Log.Format)
@@ -85,6 +72,8 @@ func TestLoaderMissingConfigFileUsesDefaults(t *testing.T) {
 
 	assert.Equal(t, defaultListen, cfg.Main.Listen)
 	assert.Equal(t, defaultPort, cfg.Main.Port)
+	assert.Equal(t, defaultMaxUploadSize, cfg.Main.MaxUploadSize)
+	assert.Equal(t, defaultFileMode, cfg.Main.FileMode)
 	assert.Equal(t, defaultLogLevel, cfg.Log.Level)
 	assert.Equal(t, defaultLogFmt, cfg.Log.Format)
 	assert.Equal(t, "", cfg.Log.File)
@@ -136,8 +125,13 @@ func TestParseFileRootDefinitions(t *testing.T) {
 
 func TestValidateFileRoots(t *testing.T) {
 	base := Config{
-		Main: MainConfig{Listen: "127.0.0.1", Port: 3000},
-		Log:  LogConfig{Level: "info", Format: "text"},
+		Main: MainConfig{
+			Listen:        "127.0.0.1",
+			Port:          3000,
+			MaxUploadSize: defaultMaxUploadSize,
+			FileMode:      defaultFileMode,
+		},
+		Log: LogConfig{Level: "info", Format: "text"},
 	}
 
 	t.Run("whitespace", func(t *testing.T) {
@@ -183,4 +177,40 @@ func writeTempConfig(t *testing.T, content string) string {
 	path := filepath.Join(t.TempDir(), "config.toml")
 	require.NoError(t, os.WriteFile(path, []byte(content), 0o600))
 	return path
+}
+
+func newTestFlagSet(t *testing.T, flagRoot string) *pflag.FlagSet {
+	t.Helper()
+
+	flags := pflag.NewFlagSet("test", pflag.ContinueOnError)
+	flags.String("listen", "", "")
+	flags.Int("port", 0, "")
+	flags.String("max-upload-size", "", "")
+	flags.String("file-mode", "", "")
+	flags.String("log-level", "", "")
+	flags.String("log-file", "", "")
+	flags.String("log-format", "", "")
+	flags.StringArray("file-root", nil, "")
+	require.NoError(t, flags.Parse([]string{
+		"--port", "4002",
+		"--max-upload-size", "5GB",
+		"--file-mode", "0644",
+		"--log-level", "debug",
+		"--file-root", "/flag:" + flagRoot,
+	}))
+
+	return flags
+}
+
+func bindTestFlags(t *testing.T, v *viper.Viper, flags *pflag.FlagSet) {
+	t.Helper()
+
+	require.NoError(t, v.BindPFlag("main.listen", flags.Lookup("listen")))
+	require.NoError(t, v.BindPFlag("main.port", flags.Lookup("port")))
+	require.NoError(t, v.BindPFlag("main.max_upload_size", flags.Lookup("max-upload-size")))
+	require.NoError(t, v.BindPFlag("main.file_mode", flags.Lookup("file-mode")))
+	require.NoError(t, v.BindPFlag("log.level", flags.Lookup("log-level")))
+	require.NoError(t, v.BindPFlag("log.file", flags.Lookup("log-file")))
+	require.NoError(t, v.BindPFlag("log.format", flags.Lookup("log-format")))
+	require.NoError(t, v.BindPFlag("file-root", flags.Lookup("file-root")))
 }

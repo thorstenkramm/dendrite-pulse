@@ -31,6 +31,8 @@ func (l *Loader) Load(configPath string) (Config, error) {
 
 	v.SetDefault("main.listen", defaultListen)
 	v.SetDefault("main.port", defaultPort)
+	v.SetDefault("main.max_upload_size", defaultMaxUploadSize)
+	v.SetDefault("main.file_mode", defaultFileMode)
 	v.SetDefault("log.level", defaultLogLevel)
 	v.SetDefault("log.format", defaultLogFmt)
 

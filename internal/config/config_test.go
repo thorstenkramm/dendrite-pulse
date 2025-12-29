@@ -7,6 +7,15 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func mainConfig(listen string, port int) MainConfig {
+	return MainConfig{
+		Listen:        listen,
+		Port:          port,
+		MaxUploadSize: defaultMaxUploadSize,
+		FileMode:      defaultFileMode,
+	}
+}
+
 func TestValidateListenAddress(t *testing.T) {
 	tests := []struct {
 		name    string
@@ -24,7 +33,7 @@ func TestValidateListenAddress(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			cfg := Config{
-				Main:      MainConfig{Listen: tt.listen, Port: 3000},
+				Main:      mainConfig(tt.listen, 3000),
 				Log:       LogConfig{Level: "info", Format: "text"},
 				FileRoots: []FileRoot{{Virtual: "/public", Source: t.TempDir()}},
 			}
@@ -56,7 +65,7 @@ func TestValidatePort(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			cfg := Config{
-				Main:      MainConfig{Listen: "127.0.0.1", Port: tt.port},
+				Main:      mainConfig("127.0.0.1", tt.port),
 				Log:       LogConfig{Level: "info", Format: "text"},
 				FileRoots: []FileRoot{{Virtual: "/public", Source: t.TempDir()}},
 			}
@@ -89,7 +98,7 @@ func TestValidateLogLevel(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			cfg := Config{
-				Main:      MainConfig{Listen: "127.0.0.1", Port: 3000},
+				Main:      mainConfig("127.0.0.1", 3000),
 				Log:       LogConfig{Level: tt.level, Format: "text"},
 				FileRoots: []FileRoot{{Virtual: "/public", Source: t.TempDir()}},
 			}
@@ -120,7 +129,7 @@ func TestValidateLogFormat(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			cfg := Config{
-				Main:      MainConfig{Listen: "127.0.0.1", Port: 3000},
+				Main:      mainConfig("127.0.0.1", 3000),
 				Log:       LogConfig{Level: "info", Format: tt.format},
 				FileRoots: []FileRoot{{Virtual: "/public", Source: t.TempDir()}},
 			}
@@ -144,6 +153,8 @@ func TestLoadConvenienceWrapper(t *testing.T) {
 
 	assert.Equal(t, defaultListen, cfg.Main.Listen)
 	assert.Equal(t, defaultPort, cfg.Main.Port)
+	assert.Equal(t, defaultMaxUploadSize, cfg.Main.MaxUploadSize)
+	assert.Equal(t, defaultFileMode, cfg.Main.FileMode)
 	assert.Equal(t, defaultLogLevel, cfg.Log.Level)
 	assert.Equal(t, defaultLogFmt, cfg.Log.Format)
 }
@@ -158,6 +169,8 @@ func TestNewLoaderWithNilViper(t *testing.T) {
 	cfg, err := loader.Load("/nonexistent/path/config.toml")
 	require.NoError(t, err)
 	assert.Equal(t, defaultListen, cfg.Main.Listen)
+	assert.Equal(t, defaultMaxUploadSize, cfg.Main.MaxUploadSize)
+	assert.Equal(t, defaultFileMode, cfg.Main.FileMode)
 }
 
 func TestValidateFileRootColon(t *testing.T) {
@@ -177,7 +190,7 @@ func TestValidateFileRootColon(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			cfg := Config{
-				Main:      MainConfig{Listen: "127.0.0.1", Port: 3000},
+				Main:      mainConfig("127.0.0.1", 3000),
 				Log:       LogConfig{Level: "info", Format: "text"},
 				FileRoots: []FileRoot{{Virtual: tt.virtual, Source: tt.source}},
 			}
@@ -197,7 +210,7 @@ func TestValidateFileRootSlash(t *testing.T) {
 
 	// Virtual "/" should be valid
 	cfg := Config{
-		Main:      MainConfig{Listen: "127.0.0.1", Port: 3000},
+		Main:      mainConfig("127.0.0.1", 3000),
 		Log:       LogConfig{Level: "info", Format: "text"},
 		FileRoots: []FileRoot{{Virtual: "/", Source: root}},
 	}
@@ -210,7 +223,7 @@ func TestValidateFileRootMultiFolder(t *testing.T) {
 
 	// Multi-folder virtual path should be rejected
 	cfg := Config{
-		Main:      MainConfig{Listen: "127.0.0.1", Port: 3000},
+		Main:      mainConfig("127.0.0.1", 3000),
 		Log:       LogConfig{Level: "info", Format: "text"},
 		FileRoots: []FileRoot{{Virtual: "/public/nested", Source: root}},
 	}

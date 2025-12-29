@@ -69,10 +69,15 @@ comma-separated) or `DENDRITE_FILE_ROOT` with the same syntax. In TOML, use `[[f
 Defaults (listen `127.0.0.1`, port `3000`, log-level `info`, log-format `text`, logging off) are applied first, then
 values are overridden in this order:
 
-- Config file (`main.listen`, `main.port`, `log.level`, `log.format`, `log.file`, `file-root`)
-- Environment variables (`DENDRITE_MAIN_LISTEN`, `DENDRITE_MAIN_PORT`, `DENDRITE_LOG_FILE`, `DENDRITE_LOG_LEVEL`,
-  `DENDRITE_LOG_FORMAT`, `DENDRITE_FILE_ROOT`)
-- Command-line flags (`--listen`, `--port`, `--log-file`, `--log-level`, `--log-format`, `--file-root`)
+Defaults also include `max_upload_size` ("2GB") and `file_mode` ("0600").
+
+- Config file (`main.listen`, `main.port`, `main.max_upload_size`, `main.file_mode`, `log.level`, `log.format`,
+  `log.file`, `file-root`)
+- Environment variables (`DENDRITE_MAIN_LISTEN`, `DENDRITE_MAIN_PORT`, `DENDRITE_MAIN_MAX_UPLOAD_SIZE`,
+  `DENDRITE_MAIN_FILE_MODE`, `DENDRITE_LOG_FILE`, `DENDRITE_LOG_LEVEL`, `DENDRITE_LOG_FORMAT`,
+  `DENDRITE_FILE_ROOT`)
+- Command-line flags (`--listen`, `--port`, `--max-upload-size`, `--file-mode`, `--log-file`, `--log-level`,
+  `--log-format`, `--file-root`)
 
 Example config:
 
@@ -80,6 +85,8 @@ Example config:
 [main]
 listen = "0.0.0.0"
 port = 3000
+max_upload_size = "2GB"
+file_mode = "0600"
 
 [log]
 level = "info"

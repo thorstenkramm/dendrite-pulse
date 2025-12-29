@@ -28,11 +28,20 @@ type Root struct {
 	Source  string
 }
 
+// Options configures file service behavior.
+type Options struct {
+	MaxUploadBytes int64
+	FileMode       os.FileMode
+}
+
 // Service exposes file operations scoped to configured roots.
 // Service is safe for concurrent use after construction via NewService.
 type Service struct {
-	roots   map[string]Root
-	ordered []Root
+	roots          map[string]Root
+	ordered        []Root
+	maxUploadBytes int64
+	fileMode       os.FileMode
+	locker         *pathLocker
 }
 
 const (
@@ -42,9 +51,12 @@ const (
 )
 
 // NewService creates a new Service.
-func NewService(roots []Root) (*Service, error) {
+func NewService(roots []Root, opts Options) (*Service, error) {
 	if len(roots) == 0 {
 		return nil, fmt.Errorf("no file roots provided")
+	}
+	if opts.MaxUploadBytes <= 0 {
+		return nil, fmt.Errorf("max upload size must be positive")
 	}
 
 	ordered := make([]Root, 0, len(roots))
@@ -66,8 +78,11 @@ func NewService(roots []Root) (*Service, error) {
 	}
 
 	return &Service{
-		roots:   rootMap,
-		ordered: ordered,
+		roots:          rootMap,
+		ordered:        ordered,
+		maxUploadBytes: opts.MaxUploadBytes,
+		fileMode:       opts.FileMode,
+		locker:         newPathLocker(),
 	}, nil
 }
 
@@ -96,6 +111,7 @@ type Metadata struct {
 	UserID         int
 	GroupID        int
 	MimeType       string
+	ETag           string
 	AccessedAt     *time.Time
 	ModifiedAt     *time.Time
 	ChangedAt      *time.Time
@@ -305,6 +321,10 @@ func metadataFromInfo(desc Descriptor, info os.FileInfo) Metadata {
 	accessed, modified, changed, born := fileTimes(info)
 
 	mimeType := mimeFor(desc.TargetKind, desc.AbsolutePath)
+	etag := ""
+	if desc.TargetKind == kindFile {
+		etag = weakETag(info)
+	}
 
 	return Metadata{
 		Name:           desc.Name,
@@ -317,6 +337,7 @@ func metadataFromInfo(desc Descriptor, info os.FileInfo) Metadata {
 		UserID:         uid,
 		GroupID:        gid,
 		MimeType:       mimeType,
+		ETag:           etag,
 		AccessedAt:     accessed,
 		ModifiedAt:     modified,
 		ChangedAt:      changed,

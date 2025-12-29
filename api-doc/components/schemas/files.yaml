@@ -2,6 +2,7 @@ FileAttributes:
   type: object
   required:
     - name
+    - virtual_path
     - resource_kind
     - permission_mode
     - user
@@ -14,6 +15,10 @@ FileAttributes:
       type: string
       description: Base name of the entry.
       example: report.pdf
+    virtual_path:
+      type: string
+      description: Virtual path to the entry.
+      example: /public/reports/report.pdf
     resource_kind:
       type: string
       description: Entry kind (file, folder, or symlink). Named resource_kind to avoid confusion with JSON:API type field.
@@ -52,6 +57,10 @@ FileAttributes:
       type: string
       description: MIME type detected for the entry.
       example: application/pdf
+    etag:
+      type: string
+      description: Weak ETag based on filesystem metadata.
+      example: W/"140737488355328-2048-1734547200000000000"
     accessed_at:
       type:
         - string
@@ -118,3 +127,10 @@ FileCollectionResponse:
         self:
           type: string
           format: uri
+FileSingleResponse:
+  type: object
+  required:
+    - data
+  properties:
+    data:
+      $ref: '#/FileResource'

@@ -37,7 +37,7 @@ func TestListDirectoryHandler(t *testing.T) {
 	require.Equal(t, http.StatusOK, rec.Code)
 	assert.Equal(t, api.ContentType, rec.Header().Get(echo.HeaderContentType))
 
-	var resp Response
+	var resp api.CollectionResponse[Resource]
 	require.NoError(t, json.NewDecoder(rec.Body).Decode(&resp))
 
 	assert.Len(t, resp.Data, 2)
@@ -93,7 +93,7 @@ func TestDirectoryListingAndDownload_VirtualSlash(t *testing.T) {
 	dirName := "00_Hasenaugengesicht"
 	require.NoError(t, os.MkdirAll(filepath.Join(root, dirName), 0o750))
 
-	svc, err := NewService([]Root{{Virtual: "/", Source: root}})
+	svc, err := NewService([]Root{{Virtual: "/", Source: root}}, defaultOptions())
 	require.NoError(t, err)
 
 	e := echo.New()
@@ -116,7 +116,7 @@ func TestDirectoryListingAndDownload_PublicRoot(t *testing.T) {
 	root := t.TempDir()
 	require.NoError(t, os.WriteFile(filepath.Join(root, "report.txt"), []byte("report"), 0o600))
 
-	svc, err := NewService([]Root{{Virtual: "/public", Source: root}})
+	svc, err := NewService([]Root{{Virtual: "/public", Source: root}}, defaultOptions())
 	require.NoError(t, err)
 
 	e := echo.New()
@@ -137,7 +137,7 @@ func TestDirectoryListingAndDownload_PublicRoot(t *testing.T) {
 
 func TestNonExistingFileReturns404(t *testing.T) {
 	root := t.TempDir()
-	svc, err := NewService([]Root{{Virtual: "/public", Source: root}})
+	svc, err := NewService([]Root{{Virtual: "/public", Source: root}}, defaultOptions())
 	require.NoError(t, err)
 
 	e := echo.New()
@@ -163,7 +163,7 @@ func TestDirectoryListingAndDownload_MultipleRoots(t *testing.T) {
 		{Virtual: "/public", Source: publicRoot},
 		{Virtual: "/Docs & Notes", Source: docsRoot},
 	}
-	svc, err := NewService(roots)
+	svc, err := NewService(roots, defaultOptions())
 	require.NoError(t, err)
 
 	e := echo.New()
@@ -201,7 +201,7 @@ func TestUnicodeFilenames(t *testing.T) {
 
 	require.Equal(t, http.StatusOK, rec.Code)
 
-	var resp Response
+	var resp api.CollectionResponse[Resource]
 	require.NoError(t, json.NewDecoder(rec.Body).Decode(&resp))
 
 	assert.Len(t, resp.Data, 3)
@@ -242,7 +242,7 @@ func TestSpecialCharacterFilenames(t *testing.T) {
 
 	require.Equal(t, http.StatusOK, rec.Code)
 
-	var resp Response
+	var resp api.CollectionResponse[Resource]
 	require.NoError(t, json.NewDecoder(rec.Body).Decode(&resp))
 
 	assert.Len(t, resp.Data, len(specialNames))
@@ -268,7 +268,7 @@ func TestPagination(t *testing.T) {
 
 	require.Equal(t, http.StatusOK, rec.Code)
 
-	var resp Response
+	var resp api.CollectionResponse[Resource]
 	require.NoError(t, json.NewDecoder(rec.Body).Decode(&resp))
 
 	assert.Len(t, resp.Data, 3)
@@ -326,7 +326,7 @@ func TestSorting(t *testing.T) {
 
 	require.Equal(t, http.StatusOK, rec.Code)
 
-	var resp Response
+	var resp api.CollectionResponse[Resource]
 	require.NoError(t, json.NewDecoder(rec.Body).Decode(&resp))
 	require.Len(t, resp.Data, 2)
 	assert.Equal(t, "alpha.txt", resp.Data[0].Attributes.Name)
@@ -401,7 +401,7 @@ func TestRootSlashSpecialCase(t *testing.T) {
 	require.NoError(t, os.WriteFile(filepath.Join(root, "file.txt"), []byte("content"), 0o600))
 
 	// Create service with virtual "/" (root slash)
-	svc, err := NewService([]Root{{Virtual: "/", Source: root}})
+	svc, err := NewService([]Root{{Virtual: "/", Source: root}}, defaultOptions())
 	require.NoError(t, err)
 
 	e := echo.New()
@@ -416,7 +416,7 @@ func TestRootSlashSpecialCase(t *testing.T) {
 
 	require.Equal(t, http.StatusOK, rec.Code)
 
-	var resp Response
+	var resp api.CollectionResponse[Resource]
 	require.NoError(t, json.NewDecoder(rec.Body).Decode(&resp))
 
 	// Should list the file directly, not a virtual folder
@@ -431,7 +431,7 @@ func TestListRootsWithMultipleRoots(t *testing.T) {
 	svc, err := NewService([]Root{
 		{Virtual: "/public", Source: root1},
 		{Virtual: "/private", Source: root2},
-	})
+	}, defaultOptions())
 	require.NoError(t, err)
 
 	e := echo.New()
@@ -445,7 +445,7 @@ func TestListRootsWithMultipleRoots(t *testing.T) {
 
 	require.Equal(t, http.StatusOK, rec.Code)
 
-	var resp Response
+	var resp api.CollectionResponse[Resource]
 	require.NoError(t, json.NewDecoder(rec.Body).Decode(&resp))
 
 	// Should list virtual folders
