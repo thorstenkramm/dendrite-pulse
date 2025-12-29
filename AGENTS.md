@@ -114,3 +114,9 @@ idiomatic APIs.
 ## Interacting with GitHub
 
 To interact with GitHub the `gh` commandline utility must be used. It's configured and authenticated properly.
+
+## Code Reviews
+
+When asked to perform a code review, always think from the perspective of a human developer.
+All the code is made for humans because they must understand and maintain it.
+Focus on understandability and maintainability by other developers.
