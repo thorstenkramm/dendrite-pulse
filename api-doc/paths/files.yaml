@@ -429,3 +429,72 @@
           application/vnd.api+json:
             schema:
               $ref: ../components/schemas/ping.yaml#/ErrorResponse
+  delete:
+    summary: Delete a file or folder
+    tags:
+      - Files
+    operationId: deleteFileOrFolder
+    parameters:
+      - in: path
+        name: resourcePath
+        required: true
+        description: >
+          Virtual path of the file or folder (e.g., `public/uploads/report.pdf`).
+        schema:
+          type: string
+        style: simple
+        explode: false
+        allowReserved: true
+      - in: query
+        name: recursive
+        required: false
+        description: >
+          Required for non-empty folders. Ignored for files and symlinks.
+        schema:
+          type: boolean
+      - in: header
+        name: If-Match
+        required: false
+        description: >
+          Require the target to match the provided weak ETag. For recursive deletes, the ETag applies to the folder only.
+        schema:
+          type: string
+    responses:
+      "204":
+        description: Deletion successful.
+      "400":
+        description: Invalid request.
+        content:
+          application/vnd.api+json:
+            schema:
+              $ref: ../components/schemas/ping.yaml#/ErrorResponse
+      "403":
+        description: Operation targets a virtual top-level folder.
+        content:
+          application/vnd.api+json:
+            schema:
+              $ref: ../components/schemas/ping.yaml#/ErrorResponse
+      "404":
+        description: Target not found.
+        content:
+          application/vnd.api+json:
+            schema:
+              $ref: ../components/schemas/ping.yaml#/ErrorResponse
+      "409":
+        description: Folder is not empty and recursive is not enabled.
+        content:
+          application/vnd.api+json:
+            schema:
+              $ref: ../components/schemas/ping.yaml#/ErrorResponse
+      "412":
+        description: Precondition failed.
+        content:
+          application/vnd.api+json:
+            schema:
+              $ref: ../components/schemas/ping.yaml#/ErrorResponse
+      "500":
+        description: Delete failed due to filesystem error.
+        content:
+          application/vnd.api+json:
+            schema:
+              $ref: ../components/schemas/ping.yaml#/ErrorResponse

@@ -36,6 +36,7 @@ func RegisterRoutes(e *echo.Echo, svc *Service) {
 	files.PUT("/*", h.putFile)
 	files.Add("MOVE", "/*", h.moveFile)
 	files.PATCH("/*", h.patchFile)
+	files.DELETE("/*", h.deleteResource)
 }
 
 // Handler serves file and directory requests.
