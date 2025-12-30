@@ -134,3 +134,21 @@ FileSingleResponse:
   properties:
     data:
       $ref: '#/FileResource'
+FileMoveRequest:
+  type: object
+  required:
+    - op
+    - to
+  properties:
+    op:
+      type: string
+      enum:
+        - move
+      description: Operation to perform.
+    to:
+      type: string
+      description: API-relative destination path (e.g., /api/v1/files/public/report.pdf).
+    overwrite:
+      type: boolean
+      description: Overwrite destination if it exists.
+      default: false

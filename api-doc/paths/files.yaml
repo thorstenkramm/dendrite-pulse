@@ -257,3 +257,175 @@
           application/vnd.api+json:
             schema:
               $ref: ../components/schemas/ping.yaml#/ErrorResponse
+  x-move:
+    summary: Move or rename a file
+    description: Custom HTTP MOVE method for file moves.
+    tags:
+      - Files
+    operationId: moveFile
+    x-http-method: MOVE
+    parameters:
+      - in: path
+        name: resourcePath
+        required: true
+        description: >
+          Virtual path including filename for the source file (e.g., `public/uploads/report.pdf`).
+        schema:
+          type: string
+        style: simple
+        explode: false
+        allowReserved: true
+      - in: header
+        name: Destination
+        required: true
+        description: API-relative destination path (e.g., `/api/v1/files/public/archive/report.pdf`).
+        schema:
+          type: string
+      - in: header
+        name: If-Match
+        required: false
+        description: Require the source file to match the provided weak ETag.
+        schema:
+          type: string
+      - in: header
+        name: Overwrite
+        required: false
+        description: Use `T` to overwrite, `F` to reject when destination exists.
+        schema:
+          type: string
+    responses:
+      "201":
+        description: Destination created.
+        headers:
+          ETag:
+            description: Weak ETag for the moved file.
+            schema:
+              type: string
+          Last-Modified:
+            description: RFC 1123 timestamp of last modification.
+            schema:
+              type: string
+        content:
+          application/vnd.api+json:
+            schema:
+              $ref: ../components/schemas/files.yaml#/FileSingleResponse
+      "204":
+        description: Destination replaced.
+      "400":
+        description: Invalid request.
+        content:
+          application/vnd.api+json:
+            schema:
+              $ref: ../components/schemas/ping.yaml#/ErrorResponse
+      "403":
+        description: Operation targets a virtual top-level folder.
+        content:
+          application/vnd.api+json:
+            schema:
+              $ref: ../components/schemas/ping.yaml#/ErrorResponse
+      "404":
+        description: Source missing or destination parent missing.
+        content:
+          application/vnd.api+json:
+            schema:
+              $ref: ../components/schemas/ping.yaml#/ErrorResponse
+      "409":
+        description: Destination exists and overwrite not allowed.
+        content:
+          application/vnd.api+json:
+            schema:
+              $ref: ../components/schemas/ping.yaml#/ErrorResponse
+      "412":
+        description: Precondition failed.
+        content:
+          application/vnd.api+json:
+            schema:
+              $ref: ../components/schemas/ping.yaml#/ErrorResponse
+      "500":
+        description: Move failed during cross-filesystem operation.
+        content:
+          application/vnd.api+json:
+            schema:
+              $ref: ../components/schemas/ping.yaml#/ErrorResponse
+  patch:
+    summary: Move or rename a file using JSON payload
+    tags:
+      - Files
+    operationId: moveFilePatch
+    parameters:
+      - in: path
+        name: resourcePath
+        required: true
+        description: >
+          Virtual path including filename for the source file (e.g., `public/uploads/report.pdf`).
+        schema:
+          type: string
+        style: simple
+        explode: false
+        allowReserved: true
+      - in: header
+        name: If-Match
+        required: false
+        description: Require the source file to match the provided weak ETag.
+        schema:
+          type: string
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/files.yaml#/FileMoveRequest
+    responses:
+      "201":
+        description: Destination created.
+        headers:
+          ETag:
+            description: Weak ETag for the moved file.
+            schema:
+              type: string
+          Last-Modified:
+            description: RFC 1123 timestamp of last modification.
+            schema:
+              type: string
+        content:
+          application/vnd.api+json:
+            schema:
+              $ref: ../components/schemas/files.yaml#/FileSingleResponse
+      "204":
+        description: Destination replaced.
+      "400":
+        description: Invalid request.
+        content:
+          application/vnd.api+json:
+            schema:
+              $ref: ../components/schemas/ping.yaml#/ErrorResponse
+      "403":
+        description: Operation targets a virtual top-level folder.
+        content:
+          application/vnd.api+json:
+            schema:
+              $ref: ../components/schemas/ping.yaml#/ErrorResponse
+      "404":
+        description: Source missing or destination parent missing.
+        content:
+          application/vnd.api+json:
+            schema:
+              $ref: ../components/schemas/ping.yaml#/ErrorResponse
+      "409":
+        description: Destination exists and overwrite not allowed.
+        content:
+          application/vnd.api+json:
+            schema:
+              $ref: ../components/schemas/ping.yaml#/ErrorResponse
+      "412":
+        description: Precondition failed.
+        content:
+          application/vnd.api+json:
+            schema:
+              $ref: ../components/schemas/ping.yaml#/ErrorResponse
+      "500":
+        description: Move failed during cross-filesystem operation.
+        content:
+          application/vnd.api+json:
+            schema:
+              $ref: ../components/schemas/ping.yaml#/ErrorResponse

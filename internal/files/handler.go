@@ -34,6 +34,8 @@ func RegisterRoutes(e *echo.Echo, svc *Service) {
 	files.GET("/*", h.getResource)
 	files.POST("/*", h.createFile)
 	files.PUT("/*", h.putFile)
+	files.Add("MOVE", "/*", h.moveFile)
+	files.PATCH("/*", h.patchFile)
 }
 
 // Handler serves file and directory requests.
@@ -131,6 +133,10 @@ func parseVirtualPath(c echo.Context, roots []Root) (Root, string, error) {
 		raw = c.Request().URL.Path
 	}
 
+	return parseVirtualPathRaw(raw, roots)
+}
+
+func parseVirtualPathRaw(raw string, roots []Root) (Root, string, error) {
 	const prefix = "/api/v1/files"
 	if !strings.HasPrefix(raw, prefix) {
 		return Root{}, "", echo.NewHTTPError(http.StatusBadRequest, "invalid path")
