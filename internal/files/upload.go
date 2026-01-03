@@ -16,7 +16,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"golang.org/x/text/unicode/norm"
 
-	"github.com/thorstenkramm/dendrite-pulse/internal/api"
+	jsonapi "github.com/thorstenkramm/dendrite-pulse/internal/api"
 )
 
 var errPayloadTooLarge = errors.New("payload too large")
@@ -402,14 +402,14 @@ func writeUploadResponse(c echo.Context, status int, desc Descriptor, sizeBytes 
 	if desc.Metadata.SizeBytes == nil {
 		desc.Metadata.SizeBytes = &sizeBytes
 	}
-	resp := api.SingleResponse[Resource]{Data: resourceFrom(desc)}
+	resp := jsonapi.SingleResponse[Resource]{Data: resourceFrom(desc)}
 	if desc.Metadata.ETag != "" {
 		c.Response().Header().Set(headerETag, desc.Metadata.ETag)
 	}
 	if desc.Metadata.ModifiedAt != nil {
 		c.Response().Header().Set(headerLastMod, desc.Metadata.ModifiedAt.UTC().Format(http.TimeFormat))
 	}
-	c.Response().Header().Set(echo.HeaderContentType, api.ContentType)
+	c.Response().Header().Set(echo.HeaderContentType, jsonapi.ContentType)
 
 	if err := c.JSON(status, resp); err != nil {
 		return fmt.Errorf("write upload response: %w", err)

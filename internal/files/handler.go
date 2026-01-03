@@ -17,7 +17,7 @@ import (
 
 	"github.com/labstack/echo/v4"
 
-	"github.com/thorstenkramm/dendrite-pulse/internal/api"
+	jsonapi "github.com/thorstenkramm/dendrite-pulse/internal/api"
 )
 
 const (
@@ -101,7 +101,7 @@ func (h Handler) getResource(c echo.Context) error {
 func sendCollectionJSON(c echo.Context, entries []Descriptor, params ListParams) error {
 	sortDescriptors(entries, params.SortField, params.Descending)
 	resp := collectionResponse(c, entries, params)
-	c.Response().Header().Set(echo.HeaderContentType, api.ContentType)
+	c.Response().Header().Set(echo.HeaderContentType, jsonapi.ContentType)
 	if err := c.JSON(http.StatusOK, resp); err != nil {
 		return fmt.Errorf("write collection response: %w", err)
 	}
@@ -206,7 +206,7 @@ func matchRoot(requestPath string, roots []Root) (Root, string, bool) {
 	return Root{}, "", false
 }
 
-func collectionResponse(c echo.Context, entries []Descriptor, params ListParams) api.CollectionResponse[Resource] {
+func collectionResponse(c echo.Context, entries []Descriptor, params ListParams) jsonapi.CollectionResponse[Resource] {
 	total := len(entries)
 
 	// Apply pagination
@@ -229,8 +229,8 @@ func collectionResponse(c echo.Context, entries []Descriptor, params ListParams)
 	basePath := c.Request().URL.Path
 	links := buildPaginationLinks(basePath, params, total)
 
-	return api.CollectionResponse[Resource]{
-		Meta: &api.PaginationMeta{
+	return jsonapi.CollectionResponse[Resource]{
+		Meta: &jsonapi.PaginationMeta{
 			TotalCount: total,
 			Offset:     params.Offset,
 			Limit:      params.Limit,
@@ -240,7 +240,7 @@ func collectionResponse(c echo.Context, entries []Descriptor, params ListParams)
 	}
 }
 
-func buildPaginationLinks(basePath string, params ListParams, total int) *api.PaginationLinks {
+func buildPaginationLinks(basePath string, params ListParams, total int) *jsonapi.PaginationLinks {
 	buildURL := func(offset int) string {
 		u := fmt.Sprintf("%s?page[offset]=%d&page[limit]=%d", basePath, offset, params.Limit)
 		if params.SortField != "name" || params.Descending {
@@ -259,7 +259,7 @@ func buildPaginationLinks(basePath string, params ListParams, total int) *api.Pa
 		lastOffset = ((total - 1) / params.Limit) * params.Limit
 	}
 
-	links := &api.PaginationLinks{
+	links := &jsonapi.PaginationLinks{
 		Self:  buildURL(params.Offset),
 		First: buildURL(0),
 		Last:  buildURL(lastOffset),

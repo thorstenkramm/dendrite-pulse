@@ -13,7 +13,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/thorstenkramm/dendrite-pulse/internal/api"
+	jsonapi "github.com/thorstenkramm/dendrite-pulse/internal/api"
 )
 
 func TestMoveRenameFile(t *testing.T) {
@@ -33,7 +33,7 @@ func TestMoveRenameFile(t *testing.T) {
 	require.Equal(t, http.StatusCreated, rec.Code)
 	assert.NotEmpty(t, rec.Header().Get(headerETag))
 
-	var resp api.SingleResponse[Resource]
+	var resp jsonapi.SingleResponse[Resource]
 	require.NoError(t, json.NewDecoder(rec.Body).Decode(&resp))
 	assert.Equal(t, "/public/renamed.txt", resp.Data.Attributes.VirtualPath)
 

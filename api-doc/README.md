@@ -2,8 +2,8 @@
 
 This folder contains the sources of rportd API documentation following the openapi 3.0.1 standard.
 
-If you came by here to read the API documentation, go to [apidoc.example.com](https://apidoc.example.com) to switch to
-the rendered HTML version.
+If you came by here to read the dendrite-pulse API documentation, go to
+[dendrite-api.system42.io](dendrite-api.system42.io) to switch to the rendered HTML version.
 
 ## Build the documentation from the sources
 

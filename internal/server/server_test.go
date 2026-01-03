@@ -14,7 +14,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/thorstenkramm/dendrite-pulse/internal/api"
+	jsonapi "github.com/thorstenkramm/dendrite-pulse/internal/api"
 	"github.com/thorstenkramm/dendrite-pulse/internal/logging"
 	"github.com/thorstenkramm/dendrite-pulse/internal/ping"
 )
@@ -28,7 +28,7 @@ func TestPingHandler(t *testing.T) {
 	e.ServeHTTP(rec, req)
 
 	require.Equal(t, http.StatusOK, rec.Code)
-	assert.Equal(t, api.ContentType, rec.Header().Get("Content-Type"))
+	assert.Equal(t, jsonapi.ContentType, rec.Header().Get("Content-Type"))
 
 	var resp ping.Response
 	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &resp))
@@ -49,9 +49,9 @@ func TestNotFoundHandler(t *testing.T) {
 	e.ServeHTTP(rec, req)
 
 	require.Equal(t, http.StatusNotFound, rec.Code)
-	assert.Equal(t, api.ContentType, rec.Header().Get("Content-Type"))
+	assert.Equal(t, jsonapi.ContentType, rec.Header().Get("Content-Type"))
 
-	var resp api.ErrorResponse
+	var resp jsonapi.ErrorResponse
 	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &resp))
 
 	require.Len(t, resp.Errors, 1)
@@ -69,9 +69,9 @@ func TestMethodNotAllowed(t *testing.T) {
 	e.ServeHTTP(rec, req)
 
 	require.Equal(t, http.StatusMethodNotAllowed, rec.Code)
-	assert.Equal(t, api.ContentType, rec.Header().Get("Content-Type"))
+	assert.Equal(t, jsonapi.ContentType, rec.Header().Get("Content-Type"))
 
-	var resp api.ErrorResponse
+	var resp jsonapi.ErrorResponse
 	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &resp))
 
 	require.Len(t, resp.Errors, 1)

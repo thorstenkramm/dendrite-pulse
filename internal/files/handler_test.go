@@ -15,7 +15,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/thorstenkramm/dendrite-pulse/internal/api"
+	jsonapi "github.com/thorstenkramm/dendrite-pulse/internal/api"
 )
 
 func TestListDirectoryHandler(t *testing.T) {
@@ -35,9 +35,9 @@ func TestListDirectoryHandler(t *testing.T) {
 	e.ServeHTTP(rec, req)
 
 	require.Equal(t, http.StatusOK, rec.Code)
-	assert.Equal(t, api.ContentType, rec.Header().Get(echo.HeaderContentType))
+	assert.Equal(t, jsonapi.ContentType, rec.Header().Get(echo.HeaderContentType))
 
-	var resp api.CollectionResponse[Resource]
+	var resp jsonapi.CollectionResponse[Resource]
 	require.NoError(t, json.NewDecoder(rec.Body).Decode(&resp))
 
 	assert.Len(t, resp.Data, 2)
@@ -201,7 +201,7 @@ func TestUnicodeFilenames(t *testing.T) {
 
 	require.Equal(t, http.StatusOK, rec.Code)
 
-	var resp api.CollectionResponse[Resource]
+	var resp jsonapi.CollectionResponse[Resource]
 	require.NoError(t, json.NewDecoder(rec.Body).Decode(&resp))
 
 	assert.Len(t, resp.Data, 3)
@@ -242,7 +242,7 @@ func TestSpecialCharacterFilenames(t *testing.T) {
 
 	require.Equal(t, http.StatusOK, rec.Code)
 
-	var resp api.CollectionResponse[Resource]
+	var resp jsonapi.CollectionResponse[Resource]
 	require.NoError(t, json.NewDecoder(rec.Body).Decode(&resp))
 
 	assert.Len(t, resp.Data, len(specialNames))
@@ -268,7 +268,7 @@ func TestPagination(t *testing.T) {
 
 	require.Equal(t, http.StatusOK, rec.Code)
 
-	var resp api.CollectionResponse[Resource]
+	var resp jsonapi.CollectionResponse[Resource]
 	require.NoError(t, json.NewDecoder(rec.Body).Decode(&resp))
 
 	assert.Len(t, resp.Data, 3)
@@ -326,7 +326,7 @@ func TestSorting(t *testing.T) {
 
 	require.Equal(t, http.StatusOK, rec.Code)
 
-	var resp api.CollectionResponse[Resource]
+	var resp jsonapi.CollectionResponse[Resource]
 	require.NoError(t, json.NewDecoder(rec.Body).Decode(&resp))
 	require.Len(t, resp.Data, 2)
 	assert.Equal(t, "alpha.txt", resp.Data[0].Attributes.Name)
@@ -416,7 +416,7 @@ func TestRootSlashSpecialCase(t *testing.T) {
 
 	require.Equal(t, http.StatusOK, rec.Code)
 
-	var resp api.CollectionResponse[Resource]
+	var resp jsonapi.CollectionResponse[Resource]
 	require.NoError(t, json.NewDecoder(rec.Body).Decode(&resp))
 
 	// Should list the file directly, not a virtual folder
@@ -445,7 +445,7 @@ func TestListRootsWithMultipleRoots(t *testing.T) {
 
 	require.Equal(t, http.StatusOK, rec.Code)
 
-	var resp api.CollectionResponse[Resource]
+	var resp jsonapi.CollectionResponse[Resource]
 	require.NoError(t, json.NewDecoder(rec.Body).Decode(&resp))
 
 	// Should list virtual folders

@@ -1,5 +1,5 @@
-// Package api provides shared JSON:API response types.
-package api
+// Package jsonapi provides shared JSON:API response types.
+package jsonapi
 
 // CollectionResponse is a JSON:API envelope for resource collections.
 type CollectionResponse[T any] struct {

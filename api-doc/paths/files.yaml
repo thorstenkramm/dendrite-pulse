@@ -47,6 +47,38 @@
         style: simple
         explode: false
         allowReserved: true
+      - in: query
+        name: page[limit]
+        required: false
+        description: >
+          Maximum number of entries returned. Must be between 1 and 500.
+          Defaults to 200 when omitted.
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 500
+          default: 200
+      - in: query
+        name: page[offset]
+        required: false
+        description: >
+          Zero-based offset into the directory listing.
+        schema:
+          type: integer
+          minimum: 0
+          default: 0
+      - in: query
+        name: sort
+        required: false
+        description: >
+          Single sort field. Prefix with `-` for descending order.
+          Supported fields: `name`, `resource_kind`, `size_bytes`, `permission_mode`, `user`, `group`,
+          `user_id`, `group_id`, `mime_type`, `accessed_at`, `modified_at`, `changed_at`, `born_at`.
+        schema:
+          type: string
+          examples:
+            - name
+            - -size_bytes
     responses:
       "200":
         description: Directory listing or file content.

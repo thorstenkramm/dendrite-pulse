@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/thorstenkramm/dendrite-pulse/internal/api"
+	jsonapi "github.com/thorstenkramm/dendrite-pulse/internal/api"
 )
 
 func TestHandler(t *testing.T) {
@@ -23,7 +23,7 @@ func TestHandler(t *testing.T) {
 	e.ServeHTTP(rec, req)
 
 	require.Equal(t, http.StatusOK, rec.Code)
-	assert.Equal(t, api.ContentType, rec.Header().Get("Content-Type"))
+	assert.Equal(t, jsonapi.ContentType, rec.Header().Get("Content-Type"))
 
 	var resp Response
 	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &resp))

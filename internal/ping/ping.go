@@ -7,7 +7,7 @@ import (
 
 	"github.com/labstack/echo/v4"
 
-	"github.com/thorstenkramm/dendrite-pulse/internal/api"
+	jsonapi "github.com/thorstenkramm/dendrite-pulse/internal/api"
 )
 
 // RegisterRoutes registers ping-related routes.
@@ -41,7 +41,7 @@ func handler(c echo.Context) error {
 		},
 	}
 
-	c.Response().Header().Set(echo.HeaderContentType, api.ContentType)
+	c.Response().Header().Set(echo.HeaderContentType, jsonapi.ContentType)
 	if err := c.JSON(http.StatusOK, response); err != nil {
 		return fmt.Errorf("write ping response: %w", err)
 	}

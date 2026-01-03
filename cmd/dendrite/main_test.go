@@ -25,7 +25,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/thorstenkramm/dendrite-pulse/internal/api"
+	jsonapi "github.com/thorstenkramm/dendrite-pulse/internal/api"
 	"github.com/thorstenkramm/dendrite-pulse/internal/config"
 	"github.com/thorstenkramm/dendrite-pulse/internal/files"
 	"github.com/thorstenkramm/dendrite-pulse/internal/server"
@@ -253,7 +253,7 @@ func uploadLargeFile(t *testing.T, testrunDir, baseURL, rootVirtual, rootPath st
 		t.Fatalf("unexpected upload status %d: %s", resp.StatusCode, string(body))
 	}
 
-	var parsed api.SingleResponse[files.Resource]
+	var parsed jsonapi.SingleResponse[files.Resource]
 	require.NoError(t, json.NewDecoder(resp.Body).Decode(&parsed))
 	require.NotNil(t, parsed.Data.Attributes.SizeBytes)
 
@@ -377,7 +377,7 @@ func cryptoRandIndex(t *testing.T, upper int) int {
 func validateFileEntries(t *testing.T, client *http.Client, baseURL string, entries []fileEntry) {
 	t.Helper()
 
-	listingCache := make(map[string]api.CollectionResponse[files.Resource])
+	listingCache := make(map[string]jsonapi.CollectionResponse[files.Resource])
 	for _, entry := range entries {
 		parentRel := path.Dir(entry.RelPath)
 		if parentRel == "." {
@@ -617,7 +617,7 @@ func fetchListing(
 	client *http.Client,
 	baseURL string,
 	apiPath string,
-) api.CollectionResponse[files.Resource] {
+) jsonapi.CollectionResponse[files.Resource] {
 	t.Helper()
 
 	req, err := http.NewRequest(http.MethodGet, baseURL+apiPath, nil)
@@ -634,12 +634,12 @@ func fetchListing(
 		t.Fatalf("unexpected status %d for %s: %s", resp.StatusCode, apiPath, string(body))
 	}
 
-	var parsed api.CollectionResponse[files.Resource]
+	var parsed jsonapi.CollectionResponse[files.Resource]
 	require.NoError(t, json.NewDecoder(resp.Body).Decode(&parsed))
 	return parsed
 }
 
-func findResource(resp api.CollectionResponse[files.Resource], name string) (files.Resource, bool) {
+func findResource(resp jsonapi.CollectionResponse[files.Resource], name string) (files.Resource, bool) {
 	for _, resource := range resp.Data {
 		if resource.Attributes.Name == name {
 			return resource, true

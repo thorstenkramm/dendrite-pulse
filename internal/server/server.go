@@ -13,7 +13,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 
-	"github.com/thorstenkramm/dendrite-pulse/internal/api"
+	jsonapi "github.com/thorstenkramm/dendrite-pulse/internal/api"
 	"github.com/thorstenkramm/dendrite-pulse/internal/files"
 	"github.com/thorstenkramm/dendrite-pulse/internal/logging"
 	"github.com/thorstenkramm/dendrite-pulse/internal/ping"
@@ -97,8 +97,8 @@ func jsonAPIErrorHandler(err error, c echo.Context) {
 		}
 	}
 
-	payload := api.ErrorResponse{
-		Errors: []api.ErrorObject{
+	payload := jsonapi.ErrorResponse{
+		Errors: []jsonapi.ErrorObject{
 			{
 				Status: fmt.Sprintf("%d", code),
 				Title:  http.StatusText(code),
@@ -108,7 +108,7 @@ func jsonAPIErrorHandler(err error, c echo.Context) {
 	}
 
 	if !c.Response().Committed {
-		c.Response().Header().Set(echo.HeaderContentType, api.ContentType)
+		c.Response().Header().Set(echo.HeaderContentType, jsonapi.ContentType)
 		_ = c.JSON(code, payload)
 	}
 }

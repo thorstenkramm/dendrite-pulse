@@ -16,7 +16,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/thorstenkramm/dendrite-pulse/internal/api"
+	jsonapi "github.com/thorstenkramm/dendrite-pulse/internal/api"
 )
 
 func TestUploadCreateFilePost(t *testing.T) {
@@ -35,7 +35,7 @@ func TestUploadCreateFilePost(t *testing.T) {
 	assert.NotEmpty(t, rec.Header().Get(headerETag))
 	assert.NotEmpty(t, rec.Header().Get(headerLastMod))
 
-	var resp api.SingleResponse[Resource]
+	var resp jsonapi.SingleResponse[Resource]
 	require.NoError(t, json.NewDecoder(rec.Body).Decode(&resp))
 	assert.Equal(t, "/public/report.txt", resp.Data.Attributes.VirtualPath)
 	assert.Equal(t, "report.txt", resp.Data.Attributes.Name)
