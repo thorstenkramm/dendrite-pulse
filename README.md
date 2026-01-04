@@ -6,7 +6,8 @@ Dendrite is a web-based file manager, command executor and terminal application 
 The project is split into two parts:
 
 1. dendrite-pulse: A RESTful API that gives access to files, commands and the command line shell of a host.
-2. dendrite-echo: A responsive single-page application providing a user-friendly graphical user interface for dendrite-pulse.
+2. dendrite-echo: A responsive single-page application providing a user-friendly graphical user interface for
+   dendrite-pulse.
 
 ## Tech stack
 
@@ -14,7 +15,17 @@ dendrite-pulse, the backend, is implemented in Golang. The tech stack is describ
 
 ## Usage
 
-<!-- End-user documentation goes here -->
+Dendrite-pulse provides binary releases for Linux and macOS on the
+[GitHub releases page](https://github.com/thorstenkramm/dendrite-pulse/releases).
+
+Download the archive matching your platform and architecture (the suffix matches `uname`/`uname -m`), extract it,
+and install the binary alongside the example configuration.
+
+```bash
+tar -xzf dendrite-pulse_Darwin_arm64.tar.gz
+sudo install -m 0755 dendrite-pulse /usr/local/bin/dendrite-pulse
+sudo install -m 0644 dendrite-pulse.conf.example /etc/dendrite/dendrite.conf
+```
 
 ## Development
 
@@ -23,6 +34,7 @@ Development requires the following tools to be installed on your machine:
 - `go`, version 1.25 or newer
 - `golangci-lint`, version 2.5.0 or newer
 - `node`, version 20, or newer
+- `goreleaser`, version 2.13.2
 
 ### Test locally with native tools
 
@@ -57,6 +69,16 @@ inside Docker.
 which act || brew install act
 act --container-architecture linux/amd64 push -P ubuntu-latest=ghcr.io/catthehacker/ubuntu:act-latest
 ```
+
+### Build release archives locally
+
+Create a local snapshot build without publishing a GitHub release:
+
+```bash
+goreleaser release --snapshot --clean
+```
+
+The generated archives are written to `./dist`.
 
 ### Configuration
 

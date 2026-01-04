@@ -35,6 +35,9 @@ go.work.sum
 # Compiled binaries (root-level)
 /dendrite
 
+# Compiled binaries created by goreleaser
+dist
+
 # Ensure source directory is tracked
 !cmd/dendrite/
 

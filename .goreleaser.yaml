@@ -1,0 +1,34 @@
+version: 2
+
+project_name: dendrite-pulse
+
+builds:
+  - id: dendrite-pulse
+    main: ./cmd/dendrite
+    binary: dendrite-pulse
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    ignore:
+      - goos: darwin
+        goarch: amd64
+    ldflags:
+      - -s -w
+    flags:
+      - -trimpath
+
+archives:
+  - id: dendrite-pulse
+    formats:
+      - tar.gz
+    name_template: '{{- if eq .Os "darwin" -}}Darwin{{- end -}}{{- if eq .Os "linux" -}}Linux{{- end -}}_{{- if eq .Arch "amd64" -}}x86_64{{- end -}}{{- if eq .Arch "arm64" -}}{{- if eq .Os "linux" -}}aarch64{{- else -}}arm64{{- end -}}{{- end -}}'
+    files:
+      - dendrite-pulse.conf.example
+
+release:
+  disable: false
